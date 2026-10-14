@@ -1,0 +1,583 @@
+
+/* =========================
+   HOME HERO
+========================= */
+
+.home {
+  position: relative;
+  isolation: isolate;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4%;
+
+  width: 100%;
+  height: calc(100svh - 74px);
+  min-height: 600px;
+  max-height: 850px;
+
+  padding: 35px 6%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  background-color: #0b0b0b;
+  background-size: cover;
+  background-position: center right;
+  background-repeat: no-repeat;
+
+  color: #fff;
+}
+
+/* Dark overlay over the original artist photo */
+
+.home-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.84) 0%,
+      rgba(0, 0, 0, 0.80) 25%,
+      rgba(0, 0, 0, 0.76) 48%,
+      rgba(0, 0, 0, 0.54) 72%,
+      rgba(0, 0, 0, 0.35) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.4),
+      transparent 45%
+    );
+}
+
+/* =========================
+   LEFT CATEGORY LIST
+========================= */
+
+.home-gallery {
+  position: relative;
+  z-index: 1;
+
+  flex: 0 1 44%;
+  width: 44%;
+  max-width: 530px;
+  min-width: 0;
+
+  box-sizing: border-box;
+}
+
+.gallery-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin: 0 0 24px;
+
+  color: #d8b478;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.gallery-heading span {
+  display: block;
+  width: 24px;
+  height: 1px;
+  background: rgba(216, 180, 120, 0.8);
+}
+
+.gallery-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.gallery-item {
+  display: grid;
+  grid-template-columns: 25px 90px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 15px;
+
+  width: 100%;
+  min-width: 0;
+  padding: 16px 10px;
+
+  box-sizing: border-box;
+  text-align: left;
+
+  background: transparent;
+  border: none;
+
+  color: #fff;
+  font-family: inherit;
+  cursor: pointer;
+
+  transition: background-color 0.25s ease;
+}
+
+.gallery-item:first-child {
+  border-top: 1px solid rgba(216, 180, 120, 0.28);
+}
+
+.gallery-number {
+  color: #d8b478;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.gallery-item img {
+  display: block;
+
+  width: 90px;
+  height: 94px;
+
+  object-fit: cover;
+  object-position: center;
+
+  border: 1px solid rgba(216, 180, 120, 0.55);
+  box-sizing: border-box;
+
+  transition: border-color 0.25s ease;
+}
+
+.gallery-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+
+.gallery-item-title {
+  color: #fff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(18px, 1.8vw, 24px);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.gallery-item-link {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.gallery-item-arrow {
+  color: #d8b478;
+  font-size: 17px;
+  transition: transform 0.25s ease;
+}
+
+.gallery-item:hover {
+  background: rgba(216, 180, 120, 0.06);
+}
+
+.gallery-item:hover img {
+  border-color: #f0d09a;
+}
+
+.gallery-item:hover .gallery-item-arrow {
+  transform: translate(3px, -3px);
+}
+
+.gallery-caption {
+  margin: 20px 0 0;
+
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+}
+
+/* =========================
+   RIGHT HERO CONTENT
+========================= */
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+
+  flex: 0 1 48%;
+  width: 48%;
+  max-width: 570px;
+  min-width: 0;
+
+  box-sizing: border-box;
+}
+
+.hero-subtitle {
+  margin: 0 0 22px;
+
+  color: #d8b478;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  line-height: 1.8;
+}
+
+.hero-content h1 {
+  margin: 0 0 20px;
+
+  color: #fff;
+  font-size: clamp(42px, 4.1vw, 64px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -2px;
+}
+
+.hero-intro {
+  max-width: 500px;
+  margin-bottom: 23px;
+}
+
+.hero-description {
+  margin: 0 0 15px;
+
+  color: #fff;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(18px, 1.5vw, 22px);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.gold-text {
+  color: #d8b478;
+  font-style: italic;
+}
+
+.hero-bio {
+  margin: 0 0 18px;
+
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.85;
+  letter-spacing: 0.1px;
+}
+
+.hero-bio strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+.booking-message {
+  margin: 0;
+  padding: 3px 0 3px 13px;
+
+  border-left: 2px solid #d8b478;
+
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.8;
+}
+
+.booking-message strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+/* =========================
+   HERO BUTTONS
+========================= */
+
+.hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 44px;
+  padding: 12px 21px;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.primary-button {
+  background: #d8b478;
+  color: #111;
+  border: 1px solid #d8b478;
+}
+
+.primary-button:hover {
+  background: #f0d09a;
+  border-color: #f0d09a;
+}
+
+.secondary-button {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.secondary-button:hover {
+  background: #fff;
+  color: #111;
+}
+
+.reviews-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  margin-top: 20px;
+  padding: 0;
+
+  border: none;
+  background: transparent;
+
+  color: #d8b478;
+  font-family: inherit;
+  font-size: 12px;
+
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+.reviews-link span {
+  font-size: 16px;
+}
+
+.reviews-link:hover {
+  color: #f0d09a;
+}
+
+/* =========================
+   LAPTOP
+========================= */
+
+@media (max-width: 1100px) {
+  .home {
+    gap: 3%;
+    padding-right: 4%;
+    padding-left: 4%;
+  }
+
+  .home-gallery {
+    flex-basis: 43%;
+    width: 43%;
+  }
+
+  .hero-content {
+    flex-basis: 50%;
+    width: 50%;
+  }
+
+  .gallery-item {
+    grid-template-columns: 22px 72px minmax(0, 1fr) 16px;
+    gap: 10px;
+    padding: 13px 5px;
+  }
+
+  .gallery-item img {
+    width: 72px;
+    height: 78px;
+  }
+
+  .hero-content h1 {
+    font-size: clamp(38px, 4.5vw, 52px);
+    letter-spacing: -1.5px;
+  }
+
+  .hero-subtitle {
+    font-size: 9px;
+    letter-spacing: 2px;
+  }
+
+  .hero-description {
+    font-size: 18px;
+  }
+
+  .hero-bio {
+    font-size: 11px;
+    line-height: 1.8;
+  }
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 768px) {
+  .home {
+    height: auto;
+    min-height: calc(100svh - 74px);
+    max-height: none;
+
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 35px;
+
+    padding: 45px 7% 35px;
+
+    background-position: 62% center;
+  }
+
+  .home-overlay {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.94),
+        rgba(0, 0, 0, 0.7)
+      ),
+      linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.75),
+        transparent 70%
+      );
+  }
+
+  .home-gallery,
+  .hero-content {
+    flex: none;
+    width: 100%;
+    max-width: 540px;
+    margin: 0 auto;
+  }
+
+  .home-gallery {
+    order: 1;
+  }
+
+  .hero-content {
+    order: 2;
+  }
+
+  .gallery-heading {
+    margin-bottom: 15px;
+  }
+
+  .gallery-item {
+    grid-template-columns: 25px 70px minmax(0, 1fr) 20px;
+    gap: 12px;
+    padding: 10px 5px;
+  }
+
+  .gallery-item img {
+    width: 70px;
+    height: 72px;
+  }
+
+  .gallery-item-title {
+    font-size: 18px;
+  }
+
+  .hero-content h1 {
+    font-size: clamp(40px, 7vw, 55px);
+  }
+
+  .hero-description {
+    font-size: 20px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 480px) {
+  .home {
+    gap: 27px;
+    padding: 35px 6% 28px;
+    background-position: 60% center;
+  }
+
+  .gallery-heading {
+    font-size: 9px;
+    letter-spacing: 2px;
+  }
+
+  .gallery-item {
+    grid-template-columns: 22px 60px minmax(0, 1fr) 16px;
+    gap: 10px;
+    padding: 9px 2px;
+  }
+
+  .gallery-item img {
+    width: 60px;
+    height: 64px;
+  }
+
+  .gallery-item-title {
+    font-size: 16px;
+  }
+
+  .gallery-item-link {
+    font-size: 9px;
+  }
+
+  .gallery-caption {
+    margin-top: 13px;
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
+
+  .hero-subtitle {
+    margin-bottom: 15px;
+    font-size: 9px;
+    letter-spacing: 1.8px;
+  }
+
+  .hero-content h1 {
+    font-size: 39px;
+    line-height: 1.08;
+    letter-spacing: -1px;
+  }
+
+  .hero-description {
+    font-size: 18px;
+  }
+
+  .hero-bio {
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  .booking-message {
+    font-size: 11px;
+  }
+
+  .hero-buttons {
+    gap: 9px;
+  }
+
+  .primary-button,
+  .secondary-button {
+    min-height: 42px;
+    padding: 11px 15px;
+    font-size: 11px;
+  }
+
+  .reviews-link {
+    margin-top: 16px;
+  }
+}
+
+/* =========================
+   REDUCED MOTION
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-item,
+  .gallery-item img,
+  .gallery-item-arrow,
+  .reviews-link {
+    transition: none;
+  }
+}

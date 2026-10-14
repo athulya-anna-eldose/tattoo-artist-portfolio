@@ -1,0 +1,294 @@
+.piercing-page {
+  min-height: 100vh;
+  padding: 25px 7%;
+  box-sizing: border-box;
+  background: #0b0b0b;
+  color: #f5f0e7;
+  font-family: Arial, sans-serif;
+}
+
+/* NAV: back arrow on the left, Book button on the right end */
+
+.piercing-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid #292723;
+}
+
+.piercing-back {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  padding: 10px;
+  box-sizing: border-box;
+  border: 1px solid #484238;
+  border-radius: 50%;
+  background: transparent;
+  color: #f5f0e7;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+
+.piercing-back svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.piercing-back:hover {
+  background: #c5a46d;
+  color: #0b0b0b;
+}
+
+.piercing-brand {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  white-space: nowrap;
+}
+
+.piercing-book {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 12px 18px;
+  border: 1px solid #c5a46d;
+  color: #f5f0e7;
+  text-decoration: none;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: background 0.25s, color 0.25s;
+}
+
+.piercing-book:hover {
+  background: #c5a46d;
+  color: #0b0b0b;
+}
+
+.piercing-hero {
+  max-width: 700px;
+  margin: 75px auto 65px;
+  text-align: center;
+}
+
+.piercing-eyebrow {
+  color: #c5a46d;
+  font-size: 10px;
+  letter-spacing: 4px;
+}
+
+.piercing-hero h1 {
+  margin: 18px 0;
+  font-family: Georgia, serif;
+  font-size: clamp(42px, 6vw, 76px);
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.piercing-hero h1 span {
+  color: #c5a46d;
+  font-style: italic;
+}
+
+.piercing-hero p {
+  max-width: 480px;
+  margin: 0 auto;
+  color: #aaa49a;
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.piercing-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 28px;
+  padding: 14px 20px;
+  border: 1px solid #c5a46d;
+  color: #f5f0e7;
+  text-decoration: none;
+  font-size: 12px;
+  transition: background 0.25s, color 0.25s;
+}
+
+.piercing-cta:hover {
+  background: #c5a46d;
+  color: #0b0b0b;
+}
+
+.piercing-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 35px 24px;
+  margin-top: 30px;
+}
+
+.piercing-card {
+  min-width: 0;
+}
+
+.piercing-image {
+  position: relative;
+  height: 330px;
+  overflow: hidden;
+  background: #171614;
+  border: 1px solid #292723;
+}
+
+.piercing-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.45s ease, opacity 0.35s ease;
+}
+
+.piercing-card:hover .piercing-image img {
+  transform: scale(1.045);
+  opacity: 0.82;
+}
+
+.piercing-number {
+  position: absolute;
+  left: 13px;
+  top: 13px;
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border: 1px solid #c5a46d;
+  background: rgb(11, 11, 11, 0.75);
+  color: #c5a46d;
+  font-size: 11px;
+}
+
+.piercing-card h2 {
+  margin: 15px 0 0;
+  color: #e9e1d6;
+  font-family: Georgia, serif;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.piercing-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 60px;
+  margin-top: 100px;
+  padding: 45px 0;
+  border-top: 1px solid #292723;
+  border-bottom: 1px solid #292723;
+}
+
+.piercing-info h2 {
+  margin: 20px 0 0;
+  font-family: Georgia, serif;
+  font-size: clamp(30px, 4vw, 48px);
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.piercing-info p {
+  margin: 0;
+  color: #aaa49a;
+  font-size: 14px;
+  line-height: 2;
+}
+
+.piercing-footer {
+  padding: 45px 0 20px;
+  text-align: center;
+}
+
+.piercing-footer p {
+  color: #aaa49a;
+  font-size: 14px;
+}
+
+.piercing-footer a {
+  display: inline-block;
+  margin-top: 5px;
+  color: #c5a46d;
+  text-decoration: none;
+  font-family: Georgia, serif;
+  font-size: 25px;
+}
+
+@media (max-width: 900px) {
+  .piercing-page {
+    padding: 22px 5%;
+  }
+
+  .piercing-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px 18px;
+  }
+
+  .piercing-image {
+    height: 300px;
+  }
+
+  .piercing-info {
+    gap: 30px;
+  }
+}
+
+@media (max-width: 520px) {
+  .piercing-nav {
+    gap: 10px;
+  }
+
+  .piercing-brand {
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+
+  .piercing-back {
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+  }
+
+  .piercing-book {
+    padding: 10px;
+    font-size: 10px;
+  }
+
+  .piercing-hero {
+    margin: 55px auto 45px;
+  }
+
+  .piercing-hero p {
+    font-size: 13px;
+  }
+
+  .piercing-gallery {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .piercing-image {
+    height: auto;
+    aspect-ratio: 4 / 5;
+  }
+
+  .piercing-info {
+    grid-template-columns: 1fr;
+    gap: 25px;
+    margin-top: 65px;
+    padding: 35px 0;
+  }
+
+  .piercing-info p {
+    font-size: 13px;
+  }
+
+  .piercing-footer {
+    padding-top: 35px;
+  }
+}
