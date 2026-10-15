@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./work.css";
 
 import tattoo1 from "../../assets/1.jpg";
@@ -28,9 +28,9 @@ import tattoo23 from "../../assets/5h.jpg";
 import tattoo24 from "../../assets/6h.jpg";
 import tattoo25 from "../../assets/7h.jpg";
 import tattoo26 from "../../assets/8h.jpg";
-import tattoo27 from "../../assets/9h.jpg"
+import tattoo27 from "../../assets/9h.jpg";
 import tattoo28 from "../../assets/10h.jpg";
-import tattoo29 from "../../assets/11h.jpeg"
+import tattoo29 from "../../assets/11h.jpeg";
 import tattoo30 from "../../assets/1p.jpeg";
 import tattoo31 from "../../assets/2p.jpg";
 import tattoo32 from "../../assets/3p.jpg";
@@ -38,8 +38,6 @@ import tattoo33 from "../../assets/4p.jpg";
 import tattoo34 from "../../assets/5p.jpg";
 import tattoo35 from "../../assets/6p.jpg";
 import tattoo36 from "../../assets/7p.jpg";
-
-
 
 interface WorkProps {
   onBackToHome: () => void;
@@ -51,99 +49,90 @@ interface Tattoo {
 }
 
 const tattoos: Tattoo[] = [
-  { image: tattoo1, category: "Minimal Line Works" },
-  { image: tattoo2,  category: "Minimal Line Works" },
-  { image: tattoo3, category: "Minimal Line Works" },
-  { image: tattoo4, category: "Minimal Line Works" },
-  { image: tattoo5, category: "Minimal Line Works" },
-  { image: tattoo6, category: "Minimal Line Works" },
-  { image: tattoo7, category: "Minimal Line Works" },
-  { image: tattoo8, category: "Minimal Line Works" },
-  { image: tattoo9, category: "Minimal Line Works" },
-  { image: tattoo10, category: "Black & Grey" },
-  { image: tattoo11,  category: "Black & Grey" },
-  { image: tattoo12, category: "Black & Grey" },
-  { image: tattoo13, category: "Black & Grey" },
-  { image: tattoo14, category: "Black & Grey" },
-  { image: tattoo15, category: "Black & Grey" },
-  { image: tattoo16, category: "Black & Grey" },
-  { image: tattoo17, category: "Black & Grey" },
-  { image: tattoo18, category: "Black & Grey" },
-  { image: tattoo19, category: "Healed Works" },
-  { image: tattoo20, category: "Healed Works" },
-  { image: tattoo21,  category: "Healed Works" },
-  { image: tattoo22, category: "Healed Works" },
-  { image: tattoo23, category: "Healed Works" },
-  { image: tattoo24, category: "Healed Works" },
-  { image: tattoo25, category: "Healed Works" },
-  { image: tattoo26, category: "Healed Works" },
-  { image: tattoo27, category: "Healed Works" },
-  { image: tattoo28, category: "Healed Works" },
-  { image: tattoo29, category: "Healed Works" },
-  { image: tattoo30, category: "Portraits & Mini Potraits" },
-  { image: tattoo31,  category: "Portraits & Mini Potraits" },
-  { image: tattoo32, category: "Portraits & Mini Potraits" },
-  { image: tattoo33, category: "Portraits & Mini Potraits" },
-  { image: tattoo34, category: "Portraits & Mini Potraits" },
-  { image: tattoo35, category: "Portraits & Mini Potraits" },
-  { image: tattoo36, category: "Portraits & Mini Potraits" },
+  ...[
+    tattoo1, tattoo2, tattoo3, tattoo4, tattoo5,
+    tattoo6, tattoo7, tattoo8, tattoo9,
+  ].map((image) => ({ image, category: "Minimal Line Works" })),
+
+  ...[
+    tattoo10, tattoo11, tattoo12, tattoo13, tattoo14,
+    tattoo15, tattoo16, tattoo17, tattoo18,
+  ].map((image) => ({ image, category: "Black & Grey" })),
+
+  ...[
+    tattoo19, tattoo20, tattoo21, tattoo22, tattoo23,
+    tattoo24, tattoo25, tattoo26, tattoo27, tattoo28, tattoo29,
+  ].map((image) => ({ image, category: "Healed Works" })),
+
+  ...[
+    tattoo30, tattoo31, tattoo32, tattoo33,
+    tattoo34, tattoo35, tattoo36,
+  ].map((image) => ({
+    image,
+    category: "Portraits & Mini Potraits",
+  })),
 ];
-interface BackButtonProps {
-  onClick?: () => void;
-  type?: "button" | "submit" | "reset";
-  className?: string;
-  "aria-label"?: string;
-  disabled?: boolean;
-  title?: string;
-}
 
 const categories = [
-  "All",
   "Black & Grey",
-  "Minimal Line Works",
   "Portraits & Mini Potraits",
+  "Minimal Line Works",
   "Healed Works",
 ];
 
-const BackButton = ({
+interface BackButtonProps {
+  onClick: () => void;
+  className?: string;
+  label?: string;
+}
+
+function BackButton({
   onClick,
-  type = "button",
-  className = "reviews-back",
-  "aria-label": ariaLabel = "Go back",
-  disabled = false,
-  title = "Back",
-}: BackButtonProps) => (
-  <button
-    type={type}
-    className={className}
-    onClick={onClick}
-    aria-label={ariaLabel}
-    disabled={disabled}
-    title={title}
-  >
-    <svg
-      viewBox="0 0 24 24"
-      width="100%"
-      height="100%"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
+  className = "wg-back",
+  label = "Go back",
+}: BackButtonProps) {
+  const isRight = className.includes("wg-arrow-right");
+
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={onClick}
+      aria-label={label}
+      title={label}
     >
-      {className.includes("wg-arrow-right") ? (
-  <path d="M9 5l7 7-7 7" />
-) : (
-  <path d="M15 5l-7 7 7 7" />
-)}
-    </svg>
-  </button>
-);
+      <svg
+        viewBox="0 0 24 24"
+        width="100%"
+        height="100%"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        {isRight ? (
+          <path d="M9 5l7 7-7 7" />
+        ) : (
+          <path d="M15 5l-7 7 7 7" />
+        )}
+      </svg>
+    </button>
+  );
+}
+
+
 function Work({ onBackToHome }: WorkProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
   const [activeCategory, setActiveCategory] = useState("All");
   const [selectedImage, setSelectedImage] = useState<Tattoo | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const dragStartX = useRef(0);
+  const dragDistance = useRef(0);
+  const draggedRef = useRef(false);
+  const selectedImageRef = useRef<Tattoo | null>(null);
 
   const filteredTattoos = tattoos.filter(
     (tattoo) =>
@@ -151,214 +140,249 @@ function Work({ onBackToHome }: WorkProps) {
       tattoo.category === activeCategory
   );
 
-  const total = filteredTattoos.length;
-
-  const activeTattoo = filteredTattoos[activeIndex];
+  useEffect(() => {
+    selectedImageRef.current = selectedImage;
+  }, [selectedImage]);
 
   useEffect(() => {
-    if (total === 0) {
-      setActiveIndex(0);
-    } else if (activeIndex >= total) {
-      setActiveIndex(0);
+    setActiveIndex(0);
+  }, [activeCategory]);
+
+  // Automatically advance the centre card.
+  useEffect(() => {
+    if (isDragging || selectedImage || filteredTattoos.length < 2) {
+      return;
     }
-  }, [activeIndex, total]);
+
+    const timer = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % filteredTattoos.length);
+    }, 1200);
+
+    return () => window.clearInterval(timer);
+  }, [activeCategory, filteredTattoos.length, isDragging, selectedImage]);
 
   useEffect(() => {
     if (!selectedImage) return;
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setSelectedImage(null);
+        return;
       }
 
-      if (event.key === "ArrowRight") {
-        setSelectedImage((current) => {
-          if (!current || total === 0) return current;
-
-          const index = filteredTattoos.findIndex(
-            (tattoo) => tattoo.image === current.image
-          );
-
-          return filteredTattoos[(index + 1) % total];
-        });
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+        return;
       }
 
-      if (event.key === "ArrowLeft") {
-        setSelectedImage((current) => {
-          if (!current || total === 0) return current;
+      const current = selectedImageRef.current;
+      if (!current || !filteredTattoos.length) return;
 
-          const index = filteredTattoos.findIndex(
-            (tattoo) => tattoo.image === current.image
-          );
+      const index = filteredTattoos.findIndex(
+        (tattoo) => tattoo.image === current.image
+      );
 
-          return filteredTattoos[
-            (index - 1 + total) % total
-          ];
-        });
-      }
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const next =
+        (index + direction + filteredTattoos.length) %
+        filteredTattoos.length;
+
+      setSelectedImage(filteredTattoos[next]);
     };
 
-    document.addEventListener("keydown", handleKeyDown);
-    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
     };
-  }, [selectedImage, filteredTattoos, total]);
+  }, [selectedImage, filteredTattoos]);
 
-  const changeCategory = (category: string) => {
-    setActiveCategory(category);
-    setActiveIndex(0);
+  const moveGallery = (direction: number) => {
+    if (!filteredTattoos.length) return;
+
+    setActiveIndex(
+      (current) =>
+        (current + direction + filteredTattoos.length) %
+        filteredTattoos.length
+    );
   };
 
-  const moveCarousel = (direction: number) => {
-    if (total < 2) return;
+  const handlePointerDown = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
 
-    setActiveIndex((current) => (current + direction + total) % total);
+    dragStartX.current = event.clientX;
+    dragDistance.current = 0;
+    draggedRef.current = false;
+    setIsDragging(true);
+
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const getCardStyle = (index: number) => {
-    const offset = index - activeIndex;
+  const handlePointerMove = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
+    if (!isDragging) return;
 
-    const angle = 19;
-    const distance = 165;
-    const depth = 115;
+    const distance = event.clientX - dragStartX.current;
 
-    return {
-      "--offset": offset,
-      "--angle": `${offset * angle}deg`,
-      "--distance": `${offset * distance}px`,
-      "--depth": `${Math.abs(offset) * -depth}px`,
-      zIndex: 20 - Math.abs(offset),
-      opacity: Math.abs(offset) > 4 ? 0 : 1,
-      pointerEvents: Math.abs(offset) > 4 ? "none" as const : "auto" as const,
-    } as React.CSSProperties;
+    if (Math.abs(distance) > 8) {
+      draggedRef.current = true;
+    }
+
+    dragDistance.current = distance;
+  };
+
+  const handlePointerUp = (
+    event: React.PointerEvent<HTMLDivElement>
+  ) => {
+    if (!isDragging) return;
+
+    setIsDragging(false);
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+
+    const distance = dragDistance.current;
+
+    if (Math.abs(distance) > 35) {
+      // Drag left = next card; drag right = previous card.
+      moveGallery(distance < 0 ? 1 : -1);
+    }
+
+    window.setTimeout(() => {
+      draggedRef.current = false;
+    }, 100);
+  };
+
+  const handlePointerCancel = () => {
+    setIsDragging(false);
+    dragDistance.current = 0;
+  };
+
+  // Calculate each card's position relative to the centre card.
+  const getCardPosition = (index: number) => {
+    const total = filteredTattoos.length;
+
+    if (!total) return 0;
+
+    let offset = index - activeIndex;
+
+    if (offset > total / 2) offset -= total;
+    if (offset < -total / 2) offset += total;
+
+    return offset;
   };
 
   return (
     <section className="wg-page">
-
-     <BackButton className="wg-back" onClick={onBackToHome} />
       
 
-      <nav className="wg-categories" aria-label="Tattoo categories">
-        {categories.map((category) => (
-          <button
-            type="button"
-            key={category}
-            className={
-              activeCategory === category ? "active" : ""
-            }
-            onClick={() => changeCategory(category)}
+<div className="wg-category-bar">
+  <BackButton onClick={onBackToHome} />
+
+  <nav className="wg-categories" aria-label="Tattoo categories">
+    {categories.map((category) => (
+      <button
+        type="button"
+        key={category}
+        className={activeCategory === category ? "active" : ""}
+        onClick={() => setActiveCategory(category)}
+      >
+        {category}
+      </button>
+    ))}
+  </nav>
+</div>
+
+
+      {filteredTattoos.length > 0 ? (
+        <div className="wg-gallery-area">
+          {/* <BackButton
+            className="wg-arrow wg-arrow-left"
+            onClick={() => moveGallery(-1)}
+            label="Previous tattoos"
+          /> */}
+
+          <div
+            className={`wg-carousel ${isDragging ? "is-dragging" : ""}`}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
+            onDragStart={(event) => event.preventDefault()}
           >
-            {category}
-          </button>
-        ))}
-      </nav>
+            <div className="wg-fan-stage">
+              {filteredTattoos.map((tattoo, index) => {
+                const offset = getCardPosition(index);
+                const visible = Math.abs(offset) <= 4;
 
-      <div className="wg-stage">
-        {total > 0 ? (
-          <div className="wg-carousel">
-            {filteredTattoos.map((tattoo, index) => {
-              const offset = index - activeIndex;
-              const distance = Math.abs(offset);
-              const isActive = offset === 0;
-
-              return (
-                <article
-                  key={tattoo.image}
-                  className={`wg-slide ${isActive ? "is-active" : ""}`}
-                  style={getCardStyle(index)}
-                  aria-hidden={distance > 4}
-                >
-                  <button
-                    type="button"
-                    className="wg-artwork"
-                    onClick={() => {
-                      if (!isActive) {
-                        setActiveIndex(index);
-                      } else {
-                        setSelectedImage(tattoo);
-                      }
+                return (
+                  <article
+                    className={`wg-slide ${
+                      offset === 0 ? "is-active" : ""
+                    }`}
+                    data-position={offset}
+                    key={`${activeCategory}-${tattoo.image}`}
+                    aria-hidden={!visible}
+                    style={{
+                      zIndex: 10 - Math.abs(offset),
+                      pointerEvents: visible ? "auto" : "none",
                     }}
-                    tabIndex={distance > 4 ? -1 : 0}
-                   
                   >
-                    <img
-                      src={tattoo.image}
-                     
-                      loading={distance < 2 ? "eager" : "lazy"}
-                      draggable={false}
-                    />
+                    <button
+                      type="button"
+                      className="wg-artwork"
+                      tabIndex={visible ? 0 : -1}
+                      onClick={() => {
+                        if (draggedRef.current || offset !== 0) return;
+                        setSelectedImage(tattoo);
+                      }}
+                      aria-label={`View ${tattoo.category} tattoo ${index + 1}`}
+                    >
+                      <img
+                        src={tattoo.image}
+                        alt={`${tattoo.category} tattoo ${index + 1}`}
+                        draggable={false}
+                      />
 
-                    <span className="wg-image-shade" />
+                      <span className="wg-image-shade" />
 
-                    <span className="wg-artwork-info">
-                      <span>
-                       
+                      <span className="wg-artwork-info">
                         <small>{tattoo.category.toUpperCase()}</small>
+                        <small>
+                          {String(index + 1).padStart(2, "0")}
+                          {" / "}
+                          {String(filteredTattoos.length).padStart(2, "0")}
+                        </small>
                       </span>
 
-                      <small>
-                        {String(index + 1).padStart(2, "0")} /{" "}
-                        {String(total).padStart(2, "0")}
-                      </small>
-                    </span>
-
-                    {isActive && (
-                      <span className="wg-view-hint">
-                        CLICK TO EXPLORE ↗
-                      </span>
-                    )}
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="wg-empty">
-            <span>COMING SOON</span>
-            <p>New artwork for this collection is on its way.</p>
-          </div>
-        )}
-
-        <BackButton
-          type="button"
-          className="wg-arrow wg-arrow-left"
-          onClick={() => moveCarousel(-1)}
-          aria-label="Previous tattoo"
-          disabled={total < 2}
-        />
-          
-
-        <BackButton
-          type="button"
-          className="wg-arrow wg-arrow-right"
-          onClick={() => moveCarousel(1)}
-          aria-label="Next tattoo"
-          disabled={total < 2}
-        />
-    
-      </div>
-
-      {/* <div className="wg-bottom">
-        <div className="wg-progress">
-          <div className="wg-progress-number">
-            <span>{String(total ? activeIndex + 1 : 0).padStart(2, "0")}</span>
-            <i />
-            <small>{String(total).padStart(2, "0")}</small>
+                      
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="wg-progress-track">
-            <span
-              style={{
-                height: `${total ? ((activeIndex + 1) / total) * 100 : 0}%`,
-              }}
-            />
-          </div>
+          {/* <BackButton
+            className="wg-arrow wg-arrow-right"
+            onClick={() => moveGallery(1)}
+            label="Next tattoos"
+          /> */}
         </div>
-      </div> */}
+      ) : (
+        <div className="wg-empty">
+          <span>COMING SOON</span>
+          <p>New artwork for this collection is on its way.</p>
+        </div>
+      )}
+
 
       {selectedImage && (
         <div
@@ -377,14 +401,52 @@ function Work({ onBackToHome }: WorkProps) {
 
           <img
             src={selectedImage.image}
-            
+            alt={selectedImage.category}
             className="wg-lightbox-img"
             onClick={(event) => event.stopPropagation()}
           />
 
           <div className="wg-lightbox-caption">
-            
             <small>{selectedImage.category}</small>
+          </div>
+
+          <div className="wg-lightbox-navigation">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                moveGallery(-1);
+                const index = filteredTattoos.findIndex(
+                  (item) => item.image === selectedImage.image
+                );
+                setSelectedImage(
+                  filteredTattoos[
+                    (index - 1 + filteredTattoos.length) %
+                      filteredTattoos.length
+                  ]
+                );
+              }}
+              aria-label="Previous image"
+            >
+              ‹
+            </button>
+
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                moveGallery(1);
+                const index = filteredTattoos.findIndex(
+                  (item) => item.image === selectedImage.image
+                );
+                setSelectedImage(
+                  filteredTattoos[(index + 1) % filteredTattoos.length]
+                );
+              }}
+              aria-label="Next image"
+            >
+              ›
+            </button>
           </div>
         </div>
       )}
@@ -393,3 +455,4 @@ function Work({ onBackToHome }: WorkProps) {
 }
 
 export default Work;
+

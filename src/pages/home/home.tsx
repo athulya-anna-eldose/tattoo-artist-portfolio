@@ -15,18 +15,9 @@ interface HomeProps {
 }
 
 const categories = [
-  {
-    title: "Piercing",
-    image: piercingPhoto,
-  },
-  {
-    title: "Tattoo",
-    image: tattooPhoto,
-  },
-  {
-    title: "Drawings",
-    image: drawingPhoto,
-  },
+  { title: "Piercing", image: piercingPhoto },
+  { title: "Tattoo", image: tattooPhoto },
+  { title: "Drawings", image: drawingPhoto },
 ];
 
 function Home({
@@ -34,95 +25,44 @@ function Home({
   onPiercingClick,
   onDrawingsClick,
   onReviewsClick,
+  onContactClick,
 }: HomeProps) {
   const handleCategoryClick = (title: string) => {
-    if (title === "Piercing") {
-      onPiercingClick();
-    } else if (title === "Tattoo") {
-      onWorkClick();
-    } else if (title === "Drawings") {
-      onDrawingsClick();
-    }
+    if (title === "Piercing") onPiercingClick();
+    else if (title === "Tattoo") onWorkClick();
+    else if (title === "Drawings") onDrawingsClick();
   };
 
   return (
-    <section
-      className="home"
-      style={{
-        backgroundImage: `url("${artistPhoto}")`,
-      }}
-    >
-      <div className="home-overlay" />
-
-      {/* LEFT SIDE: NUMBERED CATEGORY LIST */}
-      <div className="home-gallery">
-        <p className="gallery-heading">
-          <span />
-          EXPLORE MY WORK
-          <span />
-        </p>
-
-        <div className="gallery-list">
-          {categories.map((category, index) => (
-            <button
-              type="button"
-              key={category.title}
-              className="gallery-item"
-              onClick={() => handleCategoryClick(category.title)}
-              aria-label={`Explore ${category.title}`}
-            >
-              <span className="gallery-number">
-                0{index + 1}
-              </span>
-
-              <img
-                src={category.image}
-                alt={`${category.title} by Akhil Das`}
-              />
-
-              <span className="gallery-item-info">
-                <span className="gallery-item-title">
-                  {category.title}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* RIGHT SIDE: ARTIST INTRODUCTION */}
+    <section className="home">
+      {/* LEFT: TEXT */}
       <div className="hero-content">
-        <p className="hero-subtitle">
-          TATTOO ARTIST &amp; CREATIVE DESIGNER
-        </p>
-
         <h1>
-          Art That Lives
+          Hello, <span className="gradient-text">I&apos;m Akhil.</span>
           <br />
-          On Your Skin.
+          <span className="hero-role">
+            Tattoo Artist &amp; Creative Designer.
+          </span>
         </h1>
 
-        <div className="hero-intro">
-          <p className="hero-description">
-            Every face tells a story. Every detail holds meaning.
-            <span className="gold-text">
-              {" "}Let&apos;s turn yours into art.
-            </span>
-          </p>
+        <p className="hero-bio">
+          Every face tells a story. I specialise in{" "}
+          <strong>black &amp; grey realism</strong>, lifelike portraits, mini
+          portraits, custom designs and intricate dotwork. Your idea. My
+          artistry. <strong>Your story, etched in ink.</strong>
+        </p>
 
-          <p className="hero-bio">
-            I&apos;m Akhil Das, specialising in{" "}
-            <strong>black &amp; grey realism</strong>, lifelike
-            portraits, mini portraits, custom designs, and intricate
-            dotwork. Through delicate shading, striking contrasts,
-            and meticulous detail, I create tattoos that capture
-            your vision and preserve the stories that matter to you.
-          </p>
-
-          <p className="booking-message">
-            Your idea. My artistry.{" "}
-            <strong>Your story, etched in ink.</strong>
-          </p>
+        <div className="hero-buttons">
+        
+          {categories.map((item) => (
+            <button
+              type="button"
+            className="secondary-button"
+              onClick={() => handleCategoryClick(item.title)}
+            >
+              <span>{item.title}</span>
+            </button>
+          ))}
         </div>
 
         <button
@@ -132,6 +72,13 @@ function Home({
         >
           Read Client Reviews <span>→</span>
         </button>
+      </div>
+
+      {/* RIGHT: PHOTO WITH CATEGORY TABS ON TOP */}
+      <div className="hero-photo">
+        <img src={artistPhoto} alt="Akhil Das, tattoo artist" />
+
+        
       </div>
     </section>
   );
