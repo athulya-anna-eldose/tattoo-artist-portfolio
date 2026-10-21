@@ -1,10 +1,7 @@
+
 import "./home.css";
 
 import artistPhoto from "../../assets/B8732C23-1655-4905-A262-A2EFDE2212D6.png";
-
-import piercingPhoto from "../../assets/1g.jpeg";
-import tattooPhoto from "../../assets/1h.jpeg";
-import drawingPhoto from "../../assets/11h.jpeg";
 
 interface HomeProps {
   onWorkClick: () => void;
@@ -14,31 +11,35 @@ interface HomeProps {
   onContactClick: () => void;
 }
 
-const categories = [
-  { title: "Piercing", image: piercingPhoto },
-  { title: "Tattoo", image: tattooPhoto },
-  { title: "Drawings", image: drawingPhoto },
-];
+const categories = ["Piercing", "Tattoo", "Drawings"];
 
 function Home({
   onWorkClick,
   onPiercingClick,
   onDrawingsClick,
   onReviewsClick,
-  onContactClick,
 }: HomeProps) {
   const handleCategoryClick = (title: string) => {
-    if (title === "Piercing") onPiercingClick();
-    else if (title === "Tattoo") onWorkClick();
-    else if (title === "Drawings") onDrawingsClick();
+    if (title === "Piercing") {
+      onPiercingClick();
+    } else if (title === "Tattoo") {
+      onWorkClick();
+    } else if (title === "Drawings") {
+      onDrawingsClick();
+    }
   };
 
   return (
-    <section className="home">
-      {/* LEFT: TEXT */}
+    <section
+      className="home"
+      style={{ backgroundImage: `url("${artistPhoto}")` }}
+    >
+      <div className="home-overlay" />
+
       <div className="hero-content">
+
         <h1>
-          Hello, <span className="gradient-text">I&apos;m Akhil.</span>
+          Hello, <span className="gradient-text">I'm Akhil.</span>
           <br />
           <span className="hero-role">
             Tattoo Artist &amp; Creative Designer.
@@ -53,14 +54,15 @@ function Home({
         </p>
 
         <div className="hero-buttons">
-        
-          {categories.map((item) => (
+          {categories.map((title) => (
             <button
+              key={title}
               type="button"
-            className="secondary-button"
-              onClick={() => handleCategoryClick(item.title)}
+              className="secondary-button"
+              onClick={() => handleCategoryClick(title)}
             >
-              <span>{item.title}</span>
+              {title}
+              <span className="button-arrow"/>
             </button>
           ))}
         </div>
@@ -74,11 +76,9 @@ function Home({
         </button>
       </div>
 
-      {/* RIGHT: PHOTO WITH CATEGORY TABS ON TOP */}
-      <div className="hero-photo">
-        <img src={artistPhoto} alt="Akhil Das, tattoo artist" />
-
-        
+      <div className="hero-signature">
+        <span>AKHIL DAS</span>
+        <span>TATTOO ARTIST</span>
       </div>
     </section>
   );

@@ -1,5 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
+import type { PointerEvent } from "react";
 import "./piercing.css";
 
 import tattoo1 from "../../assets/1d (11).jpg";
@@ -15,24 +16,31 @@ import tattoo10 from "../../assets/1d (14).jpg";
 import tattoo11 from "../../assets/1d (15).jpg";
 import tattoo12 from "../../assets/1d (18).jpg";
 
-
 interface PiercingProps {
   onBackToHome: () => void;
 }
 
 interface Tattoo {
   image: string;
-  category: string;
 }
 
 const tattoos: Tattoo[] = [
-  ...[
-    tattoo1, tattoo2, tattoo3, tattoo4, tattoo5,
-    tattoo6, tattoo7, tattoo8, tattoo9,tattoo10, tattoo11, tattoo12
-  ].map((image) => ({ image, category: "Minimal Line Works" }))
-];
-
-
+  tattoo1,
+  tattoo2,
+  tattoo3,
+  tattoo4,
+  tattoo5,
+  tattoo6,
+  tattoo7,
+  tattoo8,
+  tattoo9,
+  tattoo10,
+  tattoo11,
+  tattoo12,
+].map((image) => ({
+  image,
+  category: "Minimal Line Works",
+}));
 
 interface BackButtonProps {
   onClick: () => void;
@@ -76,10 +84,9 @@ function BackButton({
   );
 }
 
-
 function Piercing({ onBackToHome }: PiercingProps) {
-  const [activeCategory, setActiveCategory] = useState("All");
   const [selectedImage, setSelectedImage] = useState<Tattoo | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -87,34 +94,108 @@ function Piercing({ onBackToHome }: PiercingProps) {
   const dragDistance = useRef(0);
   const draggedRef = useRef(false);
   const selectedImageRef = useRef<Tattoo | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
 
-  const filteredTattoos = tattoos.filter(
-    (tattoo) =>
-      activeCategory === "All" ||
-      tattoo.category === activeCategory
-  );
+  const filteredTattoos = tattoos;
+
+  /*
+   * The background follows the active carousel photo.
+   * When the lightbox opens, it follows the selected photo.
+   */
+  const backgroundImage =
+    selectedImage ??
+    filteredTattoos[activeIndex] ??
+    filteredTattoos[0];
 
   useEffect(() => {
     selectedImageRef.current = selectedImage;
   }, [selectedImage]);
 
+  // Preload the gallery photos to help avoid a blank flash when
+  // the background changes to another image.
   useEffect(() => {
-    setActiveIndex(0);
-  }, [activeCategory]);
+    tattoos.forEach((tattoo) => {
+      const image = new Image();
+      image.src = tattoo.image;
+    });
+  }, []);
 
-  // Automatically advance the centre card.
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current !== null) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Automatically rotate the carousel while the lightbox is closed.
   useEffect(() => {
     if (isDragging || selectedImage || filteredTattoos.length < 2) {
       return;
     }
 
     const timer = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % filteredTattoos.length);
-    }, 1200);
+      setActiveIndex(
+        (current) => (current + 1) % filteredTattoos.length
+      );
+    }, 1800);
 
     return () => window.clearInterval(timer);
-  }, [activeCategory, filteredTattoos.length, isDragging, selectedImage]);
+  }, [isDragging, selectedImage, filteredTattoos.length]);
 
+  const openLightbox = (tattoo: Tattoo) => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
+    selectedImageRef.current = tattoo;
+    setIsClosing(false);
+    setSelectedImage(tattoo);
+  };
+
+  const closeLightbox = () => {
+    if (!selectedImageRef.current) return;
+
+    setIsClosing(true);
+
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+    }
+
+    closeTimerRef.current = window.setTimeout(() => {
+      selectedImageRef.current = null;
+      setSelectedImage(null);
+      setIsClosing(false);
+      closeTimerRef.current = null;
+    }, 280);
+  };
+
+  const changeSelectedImage = (direction: number) => {
+    const current = selectedImageRef.current;
+
+    if (!current || filteredTattoos.length === 0) return;
+
+    const index = filteredTattoos.findIndex(
+      (tattoo) => tattoo.image === current.image
+    );
+
+    if (index < 0) return;
+
+    const nextIndex =
+      (index + direction + filteredTattoos.length) %
+      filteredTattoos.length;
+
+    const nextImage = filteredTattoos[nextIndex];
+
+    if (!nextImage) return;
+
+    selectedImageRef.current = nextImage;
+    setSelectedImage(nextImage);
+    setActiveIndex(nextIndex);
+  };
+
+  // Keyboard controls and scroll locking for the lightbox.
   useEffect(() => {
     if (!selectedImage) return;
 
@@ -123,27 +204,12 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setSelectedImage(null);
-        return;
+        closeLightbox();
+      } else if (event.key === "ArrowLeft") {
+        changeSelectedImage(-1);
+      } else if (event.key === "ArrowRight") {
+        changeSelectedImage(1);
       }
-
-      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
-        return;
-      }
-
-      const current = selectedImageRef.current;
-      if (!current || !filteredTattoos.length) return;
-
-      const index = filteredTattoos.findIndex(
-        (tattoo) => tattoo.image === current.image
-      );
-
-      const direction = event.key === "ArrowRight" ? 1 : -1;
-      const next =
-        (index + direction + filteredTattoos.length) %
-        filteredTattoos.length;
-
-      setSelectedImage(filteredTattoos[next]);
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -152,11 +218,9 @@ function Piercing({ onBackToHome }: PiercingProps) {
       window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [selectedImage, filteredTattoos]);
+  }, [selectedImage]);
 
   const moveGallery = (direction: number) => {
-    if (!filteredTattoos.length) return;
-
     setActiveIndex(
       (current) =>
         (current + direction + filteredTattoos.length) %
@@ -164,49 +228,47 @@ function Piercing({ onBackToHome }: PiercingProps) {
     );
   };
 
-  const handlePointerDown = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
 
     dragStartX.current = event.clientX;
     dragDistance.current = 0;
     draggedRef.current = false;
     setIsDragging(true);
-
-    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const handlePointerMove = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!isDragging) return;
 
     const distance = event.clientX - dragStartX.current;
-
-    if (Math.abs(distance) > 8) {
-      draggedRef.current = true;
-    }
-
     dragDistance.current = distance;
+
+    if (Math.abs(distance) > 8 && !draggedRef.current) {
+      draggedRef.current = true;
+
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // Pointer capture may not be available in every browser.
+      }
+    }
   };
 
-  const handlePointerUp = (
-    event: React.PointerEvent<HTMLDivElement>
-  ) => {
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
     if (!isDragging) return;
 
     setIsDragging(false);
 
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
+    try {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    } catch {
+      // The pointer may already have been released.
     }
 
-    const distance = dragDistance.current;
-
-    if (Math.abs(distance) > 35) {
-      // Drag left = next card; drag right = previous card.
-      moveGallery(distance < 0 ? 1 : -1);
+    if (Math.abs(dragDistance.current) > 35) {
+      moveGallery(dragDistance.current < 0 ? 1 : -1);
     }
 
     window.setTimeout(() => {
@@ -217,12 +279,11 @@ function Piercing({ onBackToHome }: PiercingProps) {
   const handlePointerCancel = () => {
     setIsDragging(false);
     dragDistance.current = 0;
+    draggedRef.current = false;
   };
 
-  // Calculate each card's position relative to the centre card.
   const getCardPosition = (index: number) => {
     const total = filteredTattoos.length;
-
     if (!total) return 0;
 
     let offset = index - activeIndex;
@@ -235,22 +296,24 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
   return (
     <section className="wg-page">
-      
+      {/* Full-photo background, separate from the carousel cards. */}
+      {backgroundImage && (
+        <div className="wg-page-background-container" aria-hidden="true">
+          <img
+            src={backgroundImage.image}
+            alt=""
+            className="wg-page-background"
+            draggable={false}
+          />
+        </div>
+      )}
 
-<div className="wg-category-bar">
-  <BackButton onClick={onBackToHome} />
+      <div className="wg-page-background-shade" aria-hidden="true" />
 
-</div>
-
+      <BackButton onClick={onBackToHome} />
 
       {filteredTattoos.length > 0 ? (
         <div className="wg-gallery-area">
-          {/* <BackButton
-            className="wg-arrow wg-arrow-left"
-            onClick={() => moveGallery(-1)}
-            label="Previous tattoos"
-          /> */}
-
           <div
             className={`wg-carousel ${isDragging ? "is-dragging" : ""}`}
             onPointerDown={handlePointerDown}
@@ -270,7 +333,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
                       offset === 0 ? "is-active" : ""
                     }`}
                     data-position={offset}
-                    key={`${activeCategory}-${tattoo.image}`}
+                    key={tattoo.image}
                     aria-hidden={!visible}
                     style={{
                       zIndex: 10 - Math.abs(offset),
@@ -283,40 +346,31 @@ function Piercing({ onBackToHome }: PiercingProps) {
                       tabIndex={visible ? 0 : -1}
                       onClick={() => {
                         if (draggedRef.current || offset !== 0) return;
-                        setSelectedImage(tattoo);
+                        openLightbox(tattoo);
                       }}
-                      aria-label={`View ${tattoo.category} tattoo ${index + 1}`}
+                      aria-label={`View piercing artwork ${index + 1}`}
                     >
                       <img
                         src={tattoo.image}
-                        alt={`${tattoo.category} tattoo ${index + 1}`}
+                        alt={`Piercing artwork ${index + 1}`}
                         draggable={false}
                       />
 
                       <span className="wg-image-shade" />
 
                       <span className="wg-artwork-info">
-                        <small>{tattoo.category.toUpperCase()}</small>
                         <small>
                           {String(index + 1).padStart(2, "0")}
                           {" / "}
                           {String(filteredTattoos.length).padStart(2, "0")}
                         </small>
                       </span>
-
-                      
                     </button>
                   </article>
                 );
               })}
             </div>
           </div>
-
-          {/* <BackButton
-            className="wg-arrow wg-arrow-right"
-            onClick={() => moveGallery(1)}
-            label="Next tattoos"
-          /> */}
         </div>
       ) : (
         <div className="wg-empty">
@@ -325,31 +379,44 @@ function Piercing({ onBackToHome }: PiercingProps) {
         </div>
       )}
 
-
-      {selectedImage && (
+      {/* Lightbox with its own blurred full-screen background. */}
+      {selectedImage !== null && (
         <div
-          className="wg-lightbox"
-          onClick={() => setSelectedImage(null)}
+          className={`wg-lightbox ${isClosing ? "is-closing" : ""}`}
+          onClick={closeLightbox}
           role="presentation"
         >
+          <img
+            className="wg-lightbox-bg"
+            src={selectedImage.image}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+          />
+
+          <div className="wg-lightbox-shade" />
+
           <button
             type="button"
             className="wg-lightbox-close"
-            onClick={() => setSelectedImage(null)}
+            onClick={(event) => {
+              event.stopPropagation();
+              closeLightbox();
+            }}
             aria-label="Close image"
           >
             ×
           </button>
 
           <img
+            key={`foreground-${selectedImage.image}`}
             src={selectedImage.image}
-            alt={selectedImage.category}
             className="wg-lightbox-img"
+            draggable={false}
             onClick={(event) => event.stopPropagation()}
           />
 
           <div className="wg-lightbox-caption">
-            <small>{selectedImage.category}</small>
           </div>
 
           <div className="wg-lightbox-navigation">
@@ -357,16 +424,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
-                moveGallery(-1);
-                const index = filteredTattoos.findIndex(
-                  (item) => item.image === selectedImage.image
-                );
-                setSelectedImage(
-                  filteredTattoos[
-                    (index - 1 + filteredTattoos.length) %
-                      filteredTattoos.length
-                  ]
-                );
+                changeSelectedImage(-1);
               }}
               aria-label="Previous image"
             >
@@ -377,13 +435,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
               type="button"
               onClick={(event) => {
                 event.stopPropagation();
-                moveGallery(1);
-                const index = filteredTattoos.findIndex(
-                  (item) => item.image === selectedImage.image
-                );
-                setSelectedImage(
-                  filteredTattoos[(index + 1) % filteredTattoos.length]
-                );
+                changeSelectedImage(1);
               }}
               aria-label="Next image"
             >
@@ -397,4 +449,3 @@ function Piercing({ onBackToHome }: PiercingProps) {
 }
 
 export default Piercing;
-

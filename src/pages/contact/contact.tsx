@@ -8,9 +8,9 @@ import tattoo5 from "../../assets/5g.jpg";
 import tattoo6 from "../../assets/10h.jpg";
 import tattoo7 from "../../assets/11h.jpeg";
 
-import whatsappLogo from "../../assets/whatsapp-logo-whatsapp-logo-transparent-whatsapp-icon-transparent-free-free-png.webp";
-import instagramLogo from "../../assets/instagram-logo-instagram-icon-transparent-free-png.webp";
-import emailLogo from "../../assets/gmail-new-2020-logo-png_seeklogo-389043.png";
+import whatsappLogo from "../../assets/whatsapp_monochrome.png";
+import instagramLogo from "../../assets/instagram_monochrome.png";
+import emailLogo from "../../assets/email_monochrome.png";
 
 /* ------------------------------------------------------------------
    Types

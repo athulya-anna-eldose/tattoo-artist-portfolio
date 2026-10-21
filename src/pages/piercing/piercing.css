@@ -1,8 +1,16 @@
 
+/* =========================================================
+   PIERCING GALLERY
+   ========================================================= */
+
 .wg-page {
   --wg-gold: #d7ad69;
   --wg-bright: #ffdda0;
   --wg-ivory: #f2e6d0;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
 
   min-height: 100svh;
   width: 100%;
@@ -10,59 +18,102 @@
   box-sizing: border-box;
   overflow: hidden;
   isolation: isolate;
+
   color: var(--wg-ivory);
   font-family: Arial, sans-serif;
-  background:
-    radial-gradient(ellipse at center, #21190f 0%, #0b0a08 52%, #080807 100%);
+
+  background: radial-gradient(
+    ellipse at center,
+    #21190f 0%,
+    #0b0a08 52%,
+    #080807 100%
+  );
 }
 
-/* HEADER */
+/* =========================================================
+   FULL-PHOTO BACKGROUND
+   ========================================================= */
 
-.wg-header {
-  padding: 10px 20px 0;
-  text-align: center;
+.wg-page-background-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
-.wg-eyebrow {
-  color: var(--wg-gold);
-  font-size: 10px;
-  letter-spacing: 4px;
+.wg-page .wg-page-background {
+  position: absolute;
+  inset: 0;
+
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+
+  /* Fill the page with the source photo, not a carousel card. */
+  object-fit: cover;
+  object-position: center center;
+
+  /* Lower blur keeps the photo recognizable. */
+  filter: blur(7px) brightness(0.48) saturate(1.1);
+  opacity: 0.9;
+
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-.wg-header h1 {
-  margin: 12px 0;
-  font-family: Georgia, serif;
-  font-size: clamp(36px, 5vw, 60px);
-  font-weight: 400;
+/* Darken the background without hiding the photo. */
+
+.wg-page-background-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+
+  background: rgba(5, 5, 5, 0.12);
+  pointer-events: none;
 }
 
-.wg-header h1 span {
-  color: var(--wg-gold);
-  font-style: italic;
+/* Keep page content above the background. */
+
+.wg-gallery-area,
+.wg-empty {
+  position: relative;
+  z-index: 1;
 }
 
-.wg-header p {
-  color: #aaa198;
-  font-size: 13px;
-}
-
-/* BACK BUTTON */
+/* =========================================================
+   BACK BUTTON
+   ========================================================= */
 
 .wg-page .wg-back {
-  position: absolute;
+  position: fixed;
   top: 18px;
   left: 20px;
-  z-index: 30;
+  z-index: 50;
+
   display: grid;
   place-items: center;
+
   width: 38px;
   height: 38px;
   padding: 8px;
+
   border: 1px solid #51432f;
   border-radius: 50%;
+
   background: #11100d;
   color: var(--wg-ivory);
+
   cursor: pointer;
+  transition: border-color 0.25s ease, color 0.25s ease;
+}
+
+.wg-page .wg-back:hover {
+  border-color: var(--wg-bright);
+  color: var(--wg-bright);
 }
 
 .wg-page .wg-back svg {
@@ -70,53 +121,27 @@
   height: 100%;
 }
 
-/* CATEGORY FILTERS */
-
-.wg-categories {
-  position: relative;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 9px;
-  margin: 25px auto 0;
-  padding: 0 60px;
-}
-
-.wg-categories button {
-  padding: 9px 13px;
-  border: 1px solid #40372a;
-  border-radius: 30px;
-  background: #100f0d;
-  color: #c6c0b6;
-  font-size: 10px;
-  cursor: pointer;
-  transition: 0.25s ease;
-}
-
-.wg-categories button.active,
-.wg-categories button:hover {
-  border-color: var(--wg-gold);
-  color: var(--wg-bright);
-  background: #21190f;
-}
-
-/* CAROUSEL AREA */
+/* =========================================================
+   CAROUSEL
+   ========================================================= */
 
 .wg-gallery-area {
-  position: relative;
+  flex: 0 0 auto;
+  display: block;
   width: 100%;
-  margin: 5px auto 0;
+  margin: 70px auto 0;
 }
 
 .wg-carousel {
   position: relative;
   width: 100%;
   height: clamp(480px, 48vw, 650px);
+
   overflow: hidden;
   perspective: 1400px;
+  perspective-origin: center center;
   touch-action: pan-y;
+
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
@@ -126,8 +151,6 @@
   cursor: grabbing;
 }
 
-/* ALL CARDS SHARE THE SAME CENTRE POINT */
-
 .wg-fan-stage {
   position: absolute;
   inset: 0;
@@ -136,11 +159,15 @@
 
 .wg-slide {
   position: absolute;
-  left: 50%;
   top: 50%;
+  left: 50%;
 
   width: clamp(260px, 41vw, 445px);
   height: clamp(350px, 43vw, 550px);
+
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 
   transform-style: preserve-3d;
   transform-origin: center center;
@@ -153,7 +180,7 @@
   will-change: transform;
 }
 
-/* CENTRE CARD */
+/* Centre card */
 
 .wg-slide[data-position="0"] {
   transform: translate(-50%, -50%) translateZ(80px) scale(1);
@@ -162,117 +189,153 @@
   z-index: 20;
 }
 
-/* CARDS TO THE LEFT */
+/* Left cards */
 
 .wg-slide[data-position="-1"] {
-  transform: translate(-50%, -50%) translateX(-26%) translateY(5%) rotateY(24deg) scale(0.88);
+  transform: translate(-50%, -50%) translateX(-26%)
+    translateY(5%) rotateY(24deg) scale(0.88);
   opacity: 0.98;
   filter: brightness(0.9);
 }
 
 .wg-slide[data-position="-2"] {
-  transform: translate(-50%, -50%) translateX(-47%) translateY(10%) rotateY(30deg) scale(0.75);
+  transform: translate(-50%, -50%) translateX(-47%)
+    translateY(10%) rotateY(30deg) scale(0.75);
   opacity: 0.85;
   filter: brightness(0.72);
 }
 
 .wg-slide[data-position="-3"] {
-  transform: translate(-50%, -50%) translateX(-66%) translateY(14%) rotateY(34deg) scale(0.62);
+  transform: translate(-50%, -50%) translateX(-66%)
+    translateY(14%) rotateY(34deg) scale(0.62);
   opacity: 0.68;
   filter: brightness(0.55);
 }
 
 .wg-slide[data-position="-4"] {
-  transform: translate(-50%, -50%) translateX(-81%) translateY(18%) rotateY(38deg) scale(0.5);
+  transform: translate(-50%, -50%) translateX(-81%)
+    translateY(18%) rotateY(38deg) scale(0.5);
   opacity: 0.42;
   filter: brightness(0.4);
 }
 
-/* CARDS TO THE RIGHT */
+/* Right cards */
 
 .wg-slide[data-position="1"] {
-  transform: translate(-50%, -50%) translateX(26%) translateY(5%) rotateY(-24deg) scale(0.88);
+  transform: translate(-50%, -50%) translateX(26%)
+    translateY(5%) rotateY(-24deg) scale(0.88);
   opacity: 0.98;
   filter: brightness(0.9);
 }
 
 .wg-slide[data-position="2"] {
-  transform: translate(-50%, -50%) translateX(47%) translateY(10%) rotateY(-30deg) scale(0.75);
+  transform: translate(-50%, -50%) translateX(47%)
+    translateY(10%) rotateY(-30deg) scale(0.75);
   opacity: 0.85;
   filter: brightness(0.72);
 }
 
 .wg-slide[data-position="3"] {
-  transform: translate(-50%, -50%) translateX(66%) translateY(14%) rotateY(-34deg) scale(0.62);
+  transform: translate(-50%, -50%) translateX(66%)
+    translateY(14%) rotateY(-34deg) scale(0.62);
   opacity: 0.68;
   filter: brightness(0.55);
 }
 
 .wg-slide[data-position="4"] {
-  transform: translate(-50%, -50%) translateX(81%) translateY(18%) rotateY(-38deg) scale(0.5);
+  transform: translate(-50%, -50%) translateX(81%)
+    translateY(18%) rotateY(-38deg) scale(0.5);
   opacity: 0.42;
   filter: brightness(0.4);
 }
 
-/* CARD IMAGE */
+/* =========================================================
+   CARD ARTWORK
+   ========================================================= */
+
 
 .wg-artwork {
   position: relative;
   display: block;
+
   width: 100%;
   height: 100%;
   padding: 0;
   overflow: hidden;
+
   border: 1px solid rgba(215, 173, 105, 0.25);
   border-radius: 2px;
-  background: #11100e;
+
+  background: transparent;
   color: var(--wg-ivory);
   text-align: left;
+
   cursor: pointer;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+  box-sizing: border-box;
 }
+.wg-artwork img {
+  display: block;
+  position: absolute;
+  inset: 0;
 
+  width: 100%;
+  height: 100%;
+  max-width: none;
+
+  object-fit: cover;
+  object-position: center;
+
+  border: none;
+  outline: none;
+  background: transparent;
+
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
 .wg-slide[data-position="0"] .wg-artwork {
   border: 2px solid rgba(231, 195, 130, 0.85);
+
   box-shadow:
     0 0 10px rgba(215, 173, 105, 0.38),
     0 0 30px rgba(215, 173, 105, 0.12),
     0 30px 65px rgba(0, 0, 0, 0.8);
 }
 
-.wg-artwork img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
-  pointer-events: none;
-  user-select: none;
-  -webkit-user-drag: none;
-}
+/* Keep the full artwork visible inside each card. */
+
+
+/* Make each photo fill its animated card */
+
+
 
 .wg-image-shade {
   position: absolute;
   inset: 0;
+
   background: linear-gradient(
     to bottom,
     transparent 60%,
     rgba(0, 0, 0, 0.76) 100%
   );
+
   pointer-events: none;
 }
 
-/* CARD LABELS */
+/* Card labels */
 
 .wg-artwork-info {
   position: absolute;
   right: 16px;
   bottom: 16px;
   left: 16px;
+
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   gap: 6px;
+
   pointer-events: none;
 }
 
@@ -286,68 +349,17 @@
   white-space: nowrap;
 }
 
-.wg-view-hint {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255, 221, 160, 0.45);
-  background: rgba(0, 0, 0, 0.7);
-  color: var(--wg-bright);
-  font-size: 8px;
-  letter-spacing: 1px;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.wg-slide[data-position="0"] .wg-artwork:hover .wg-view-hint {
-  opacity: 1;
-}
-
 .wg-artwork:focus-visible {
   outline: 2px solid var(--wg-bright);
   outline-offset: 4px;
 }
 
-/* NAVIGATION ARROWS */
-
-.wg-page .wg-arrow {
-  position: absolute;
-  top: 50%;
-  z-index: 35;
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  padding: 9px;
-  border: 1px solid rgba(215, 173, 105, 0.45);
-  border-radius: 50%;
-  background: rgba(10, 10, 9, 0.85);
-  color: var(--wg-ivory);
-  cursor: pointer;
-  transform: translateY(-50%);
-  transition: 0.25s ease;
-}
-
-.wg-page .wg-arrow svg {
-  width: 100%;
-  height: 100%;
-}
-
-.wg-page .wg-arrow-left {
-  left: 18px;
-}
-
-.wg-page .wg-arrow-right {
-  right: 18px;
-}
-
-.wg-page .wg-arrow:hover {
-  border-color: var(--wg-bright);
-  color: var(--wg-bright);
-}
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
 
 .wg-empty {
+  flex: 0 0 auto;
   padding: 90px 20px;
   text-align: center;
 }
@@ -362,78 +374,237 @@
   color: #aaa198;
 }
 
-/* FOOTER */
-
-.wg-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  padding: 0 5%;
-  color: #8c806b;
-  font-size: 9px;
-  letter-spacing: 1.5px;
-}
-
-/* LIGHTBOX */
+/* =========================================================
+   LIGHTBOX
+   ========================================================= */
 
 .wg-lightbox {
   position: fixed;
   inset: 0;
   z-index: 9999;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 15px;
+
   padding: 50px 15px 25px;
   box-sizing: border-box;
-  background: rgba(4, 4, 4, 0.97);
+  overflow: hidden;
+  isolation: isolate;
+
+  background: #080807;
+
+  animation: wg-backdrop-in 0.35s ease forwards;
 }
 
-.wg-lightbox-img {
+.wg-lightbox.is-closing {
+  animation: wg-backdrop-out 0.28s ease forwards;
+}
+
+/* Full-screen blurred background in the lightbox */
+
+.wg-lightbox .wg-lightbox-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+
+  object-fit: cover;
+  object-position: center;
+
+  filter: blur(10px) brightness(0.58) saturate(1.1);
+  opacity: 1;
+
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Dark overlay */
+
+.wg-lightbox .wg-lightbox-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  background: rgba(5, 5, 5, 0.3);
+  pointer-events: none;
+}
+
+/* Sharp foreground image */
+
+.wg-lightbox .wg-lightbox-img {
+  position: relative;
+  z-index: 2;
+
   display: block;
   max-width: 90vw;
   max-height: 76vh;
+
   width: auto;
   height: auto;
+
   object-fit: contain;
+
   border: 1px solid rgba(215, 173, 105, 0.4);
+
+  box-shadow:
+    0 0 40px rgba(215, 173, 105, 0.15),
+    0 30px 80px rgba(0, 0, 0, 0.8);
+
+  animation: wg-image-in 0.5s cubic-bezier(0.2, 0.75, 0.25, 1) both;
 }
 
-.wg-lightbox-close {
+.wg-lightbox.is-closing .wg-lightbox-img {
+  animation: wg-image-out 0.28s ease forwards;
+}
+
+/* Close button */
+
+.wg-lightbox .wg-lightbox-close {
   position: absolute;
   top: 12px;
   right: 22px;
+  z-index: 3;
+
+  padding: 0;
   border: 0;
+
   background: transparent;
-  color: white;
+  color: #fff;
+
   font-size: 38px;
+  line-height: 1;
   cursor: pointer;
+
+  animation: wg-fade-up 0.5s ease 0.15s both;
 }
 
-.wg-lightbox-caption {
+.wg-lightbox .wg-lightbox-close:hover {
+  color: var(--wg-bright);
+}
+
+/* Caption */
+
+.wg-lightbox .wg-lightbox-caption {
+  position: relative;
+  z-index: 2;
+
   color: var(--wg-gold);
   font-family: Georgia, serif;
   letter-spacing: 2px;
+
+  animation: wg-fade-up 0.5s ease 0.15s both;
 }
 
-.wg-lightbox-navigation {
+/* Previous / next buttons */
+
+.wg-lightbox .wg-lightbox-navigation {
+  position: relative;
+  z-index: 2;
+
   display: flex;
   gap: 20px;
+
+  animation: wg-fade-up 0.5s ease 0.15s both;
 }
 
 .wg-lightbox-navigation button {
+  display: grid;
+  place-items: center;
+
   width: 40px;
   height: 40px;
+  padding: 0;
+
   border: 1px solid #51432f;
   border-radius: 50%;
+
   background: #17130f;
   color: var(--wg-ivory);
+
   font-size: 27px;
+  line-height: 1;
+
   cursor: pointer;
+  transition: border-color 0.25s ease, color 0.25s ease;
 }
 
-/* TABLET */
+.wg-lightbox-navigation button:hover {
+  border-color: var(--wg-bright);
+  color: var(--wg-bright);
+}
+
+/* =========================================================
+   ANIMATIONS
+   ========================================================= */
+
+@keyframes wg-backdrop-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes wg-backdrop-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes wg-image-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes wg-image-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes wg-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
 
 @media (max-width: 768px) {
   .wg-carousel {
@@ -446,63 +617,50 @@
   }
 
   .wg-slide[data-position="-1"] {
-    transform: translate(-50%, -50%) translateX(-25%) translateY(5%) rotateY(24deg) scale(0.82);
+    transform: translate(-50%, -50%) translateX(-25%)
+      translateY(5%) rotateY(24deg) scale(0.82);
   }
 
   .wg-slide[data-position="1"] {
-    transform: translate(-50%, -50%) translateX(25%) translateY(5%) rotateY(-24deg) scale(0.82);
+    transform: translate(-50%, -50%) translateX(25%)
+      translateY(5%) rotateY(-24deg) scale(0.82);
   }
 
   .wg-slide[data-position="-2"] {
-    transform: translate(-50%, -50%) translateX(-43%) translateY(10%) rotateY(30deg) scale(0.68);
+    transform: translate(-50%, -50%) translateX(-43%)
+      translateY(10%) rotateY(30deg) scale(0.68);
   }
 
   .wg-slide[data-position="2"] {
-    transform: translate(-50%, -50%) translateX(43%) translateY(10%) rotateY(-30deg) scale(0.68);
-  }
-
-  .wg-categories {
-    padding: 0 50px;
-  }
-
-  .wg-categories button {
-    font-size: 9px;
-    padding: 8px 10px;
+    transform: translate(-50%, -50%) translateX(43%)
+      translateY(10%) rotateY(-30deg) scale(0.68);
   }
 }
 
-/* MOBILE */
+/* =========================================================
+   MOBILE
+   ========================================================= */
 
 @media (max-width: 480px) {
   .wg-page {
     padding-top: 15px;
   }
 
-  .wg-header {
-    padding: 25px 15px 0;
+  .wg-page .wg-back {
+    top: 12px;
+    left: 12px;
+
+    width: 32px;
+    height: 32px;
+    padding: 6px;
   }
 
-  .wg-header h1 {
-    font-size: 35px;
-  }
-
-  .wg-header p {
-    font-size: 11px;
-  }
-
-  .wg-categories {
-    gap: 6px;
-    margin-top: 18px;
-    padding: 0 12px;
-  }
-
-  .wg-categories button {
-    padding: 7px 9px;
-    font-size: 8px;
+  .wg-gallery-area {
+    margin-top: 56px;
   }
 
   .wg-carousel {
-    height: 420px;
+    height: clamp(430px, 62svh, 560px);
   }
 
   .wg-slide {
@@ -511,27 +669,33 @@
   }
 
   .wg-slide[data-position="-1"] {
-    transform: translate(-50%, -50%) translateX(-24%) translateY(5%) rotateY(25deg) scale(0.78);
+    transform: translate(-50%, -50%) translateX(-24%)
+      translateY(5%) rotateY(25deg) scale(0.78);
   }
 
   .wg-slide[data-position="1"] {
-    transform: translate(-50%, -50%) translateX(24%) translateY(5%) rotateY(-25deg) scale(0.78);
+    transform: translate(-50%, -50%) translateX(24%)
+      translateY(5%) rotateY(-25deg) scale(0.78);
   }
 
   .wg-slide[data-position="-2"] {
-    transform: translate(-50%, -50%) translateX(-42%) translateY(10%) rotateY(32deg) scale(0.62);
+    transform: translate(-50%, -50%) translateX(-42%)
+      translateY(10%) rotateY(32deg) scale(0.62);
   }
 
   .wg-slide[data-position="2"] {
-    transform: translate(-50%, -50%) translateX(42%) translateY(10%) rotateY(-32deg) scale(0.62);
+    transform: translate(-50%, -50%) translateX(42%)
+      translateY(10%) rotateY(-32deg) scale(0.62);
   }
 
   .wg-slide[data-position="-3"] {
-    transform: translate(-50%, -50%) translateX(-60%) translateY(14%) rotateY(35deg) scale(0.48);
+    transform: translate(-50%, -50%) translateX(-60%)
+      translateY(14%) rotateY(35deg) scale(0.48);
   }
 
   .wg-slide[data-position="3"] {
-    transform: translate(-50%, -50%) translateX(60%) translateY(14%) rotateY(-35deg) scale(0.48);
+    transform: translate(-50%, -50%) translateX(60%)
+      translateY(14%) rotateY(-35deg) scale(0.48);
   }
 
   .wg-artwork-info {
@@ -545,136 +709,73 @@
     letter-spacing: 0.3px;
   }
 
-  .wg-view-hint {
-    display: none;
-  }
-
-  .wg-page .wg-arrow {
-    width: 30px;
-    height: 30px;
-    padding: 6px;
-  }
-
-  .wg-page .wg-arrow-left {
-    left: 3px;
-  }
-
-  .wg-page .wg-arrow-right {
-    right: 3px;
-  }
-
-  .wg-footer {
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    text-align: center;
-    font-size: 7px;
-  }
-
-  .wg-lightbox-img {
+  .wg-lightbox .wg-lightbox-img {
     max-width: 94vw;
     max-height: 72vh;
   }
+
+  .wg-lightbox .wg-lightbox-bg {
+    filter: blur(10px) brightness(0.58) saturate(1.1);
+  }
+
+  .wg-lightbox .wg-lightbox-close {
+    top: 14px;
+    right: 16px;
+  }
 }
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
 
 @media (prefers-reduced-motion: reduce) {
   .wg-slide {
     transition-duration: 0.01ms;
   }
+
+  .wg-lightbox,
+  .wg-lightbox-img,
+  .wg-lightbox-close,
+  .wg-lightbox-caption,
+  .wg-lightbox-navigation {
+    animation-duration: 0.01ms !important;
+  }
 }
 
-/* BACK BUTTON AND CATEGORIES IN ONE ROW */
+/* Fix image edges during 3D carousel animation */
 
-.wg-category-bar {
+.wg-fan-stage {
+  transform-style: preserve-3d;
+}
+
+.wg-slide {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.wg-artwork {
   position: relative;
-  z-index: 30;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-
-  width: 100%;
-  margin: 25px auto 0;
-  padding: 0 24px;
-  box-sizing: border-box;
+  overflow: hidden;
+  isolation: isolate;
+  background: #111;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
-.wg-category-bar > .wg-back {
-  position: static;
-  flex: 0 0 38px;
-  width: 38px;
-  height: 38px;
-}
+.wg-artwork img {
+  position: absolute;
+  top: -2px;
+  left: -2px;
 
-/* Remove the old positioning and margins from the nav */
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
 
-.wg-category-bar .wg-categories {
-  position: static;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 9px;
-
-  margin: 0;
-  padding: 0;
-}
-
-/* Mobile layout */
-
-@media (max-width: 600px) {
-  .wg-category-bar {
-    justify-content: flex-start;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 0 12px;
-  }
-
-  .wg-category-bar > .wg-back {
-    flex: 0 0 32px;
-    width: 32px;
-    height: 32px;
-    margin-top: 2px;
-  }
-
-  .wg-category-bar .wg-categories {
-    flex: 1;
-    justify-content: flex-start;
-    gap: 7px;
-  }
-
-  .wg-category-bar .wg-categories button {
-    padding: 8px 9px;
-    font-size: 9px;
-  }
-}
-
-/* ===== FIX: MOBILE VERTICAL ALIGNMENT ===== */
-
-.wg-page {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Gallery takes the leftover space and centres the carousel in it */
-/* Gallery sits right under the categories */
-.wg-gallery-area {
-  flex: 0 0 auto;
   display: block;
-  margin: 0 auto;
-}
+  object-fit: cover;
+  object-position: center;
 
-.wg-empty {
-  flex: 0 0 auto;
-}
-
-@media (max-width: 480px) {
-  .wg-gallery-area {
-    margin-top: 10px;
-  }
-
-  .wg-carousel {
-    height: clamp(430px, 62svh, 560px);
-  }
+  max-width: none;
+  border: none;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
