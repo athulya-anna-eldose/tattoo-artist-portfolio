@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useCallback, useState } from "react";
 import "./App.css";
 
 import Home from "./pages/home/home";
@@ -7,6 +8,7 @@ import Work from "./pages/work/work";
 import Reviews from "./pages/reviews/reviews";
 import Piercing from "./pages/piercing/piercing";
 import Drawings from "./pages/drawing/drawing";
+import LogoIntro from "./pages/logoIntro/LogoIntro";
 
 type Page =
   | "home"
@@ -19,10 +21,24 @@ type Page =
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>("home");
 
+ const [showIntro, setShowIntro] = useState(true);
+
   const goToHome = () => setCurrentPage("home");
+
+  const completeIntro = useCallback(() => {
+    try {
+      sessionStorage.setItem("akhil-logo-intro-seen", "true");
+    } catch {
+      // Continue normally if session storage is unavailable.
+    }
+
+    setShowIntro(false);
+  }, []);
 
   return (
     <div className="app">
+      {showIntro && <LogoIntro onComplete={completeIntro} />}
+
       <nav className="navbar">
         <div
           className="logo"
@@ -39,17 +55,9 @@ function App() {
         </div>
 
         <div className="nav-links">
-          <button onClick={() => setCurrentPage("work")}>
-            Work
-          </button>
-
-          <button onClick={() => setCurrentPage("reviews")}>
-            Reviews
-          </button>
-
-          <button onClick={() => setCurrentPage("contact")}>
-            Contact
-          </button>
+          <button onClick={() => setCurrentPage("work")}>Work</button>
+          <button onClick={() => setCurrentPage("reviews")}>Reviews</button>
+          <button onClick={() => setCurrentPage("contact")}>Contact</button>
         </div>
       </nav>
 

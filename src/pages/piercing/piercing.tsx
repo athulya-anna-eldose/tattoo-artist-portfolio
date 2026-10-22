@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 import "./piercing.css";
@@ -22,6 +21,7 @@ interface PiercingProps {
 
 interface Tattoo {
   image: string;
+  category?: string;
 }
 
 const tattoos: Tattoo[] = [
@@ -310,7 +310,6 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
       <div className="wg-page-background-shade" aria-hidden="true" />
 
-      <BackButton onClick={onBackToHome} />
 
       {filteredTattoos.length > 0 ? (
         <div className="wg-gallery-area">
@@ -323,16 +322,30 @@ function Piercing({ onBackToHome }: PiercingProps) {
             onDragStart={(event) => event.preventDefault()}
           >
             <div className="wg-fan-stage">
+                    <BackButton onClick={onBackToHome} />
+
               {filteredTattoos.map((tattoo, index) => {
                 const offset = getCardPosition(index);
                 const visible = Math.abs(offset) <= 4;
+
+                /*
+                 * Cards outside the visible range get a "far" position:
+                 * they wait invisibly off-screen (right side = about to
+                 * enter, left side = already left), so no stray cards
+                 * show up behind the carousel.
+                 */
+                const position = visible
+                  ? String(offset)
+                  : offset < 0
+                  ? "far-left"
+                  : "far-right";
 
                 return (
                   <article
                     className={`wg-slide ${
                       offset === 0 ? "is-active" : ""
                     }`}
-                    data-position={offset}
+                    data-position={position}
                     key={tattoo.image}
                     aria-hidden={!visible}
                     style={{
@@ -411,13 +424,13 @@ function Piercing({ onBackToHome }: PiercingProps) {
           <img
             key={`foreground-${selectedImage.image}`}
             src={selectedImage.image}
+            alt=""
             className="wg-lightbox-img"
             draggable={false}
             onClick={(event) => event.stopPropagation()}
           />
 
-          <div className="wg-lightbox-caption">
-          </div>
+          <div className="wg-lightbox-caption"></div>
 
           <div className="wg-lightbox-navigation">
             <button

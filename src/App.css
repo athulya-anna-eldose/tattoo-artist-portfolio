@@ -156,3 +156,8 @@ main {
     font-size: 11px;
   }
 }
+
+.app:has(.logo-intro) .navbar,
+.app:has(.logo-intro) main {
+  pointer-events: none;
+}

@@ -1,4 +1,3 @@
-
 /* =========================================================
    PIERCING GALLERY
    ========================================================= */
@@ -125,9 +124,15 @@
    CAROUSEL
    ========================================================= */
 
+/*
+ * The gallery area fills the remaining page height and centres the
+ * carousel vertically, so there is no empty strip at the bottom
+ * (desktop and mobile).
+ */
 .wg-gallery-area {
-  flex: 0 0 auto;
-  display: block;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
   width: 100%;
   margin: 70px auto 0;
 }
@@ -137,7 +142,9 @@
   width: 100%;
   height: clamp(480px, 48vw, 650px);
 
-  overflow: hidden;
+  /* visible so cards pushed down by translateY are never clipped.
+     .wg-page already has overflow: hidden, so nothing spills out. */
+  overflow: visible;
   perspective: 1400px;
   perspective-origin: center center;
   touch-action: pan-y;
@@ -249,10 +256,29 @@
   filter: brightness(0.4);
 }
 
+/* Hidden cards: wait off-screen at full transparency, so no stray
+   cards show behind the carousel. New cards enter from the right
+   and travel to the left. */
+
+.wg-slide[data-position="far-right"] {
+  transform: translate(-50%, -50%) translateX(95%)
+    translateY(20%) rotateY(-40deg) scale(0.4);
+  opacity: 0;
+  filter: brightness(0.3);
+  pointer-events: none;
+}
+
+.wg-slide[data-position="far-left"] {
+  transform: translate(-50%, -50%) translateX(-95%)
+    translateY(20%) rotateY(40deg) scale(0.4);
+  opacity: 0;
+  filter: brightness(0.3);
+  pointer-events: none;
+}
+
 /* =========================================================
    CARD ARTWORK
    ========================================================= */
-
 
 .wg-artwork {
   position: relative;
@@ -262,29 +288,40 @@
   height: 100%;
   padding: 0;
   overflow: hidden;
+  isolation: isolate;
 
   border: 1px solid rgba(215, 173, 105, 0.25);
   border-radius: 2px;
 
-  background: transparent;
+  background: transparent; /* no dark fill showing at the edges */
   color: var(--wg-ivory);
   text-align: left;
 
   cursor: pointer;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
   box-sizing: border-box;
+
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
+
 .wg-artwork img {
-  display: block;
   position: absolute;
   inset: 0;
 
+  display: block;
   width: 100%;
   height: 100%;
+  min-width: 100%;
+  min-height: 100%;
   max-width: none;
 
   object-fit: cover;
   object-position: center;
+
+  /* Slightly over-scale so any dark edge in the photo (or at the
+     card sides during 3D animation) is cropped out. */
+  transform: scale(1.12);
 
   border: none;
   outline: none;
@@ -293,7 +330,11 @@
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
+
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
+
 .wg-slide[data-position="0"] .wg-artwork {
   border: 2px solid rgba(231, 195, 130, 0.85);
 
@@ -302,13 +343,6 @@
     0 0 30px rgba(215, 173, 105, 0.12),
     0 30px 65px rgba(0, 0, 0, 0.8);
 }
-
-/* Keep the full artwork visible inside each card. */
-
-
-/* Make each photo fill its animated card */
-
-
 
 .wg-image-shade {
   position: absolute;
@@ -352,6 +386,13 @@
 .wg-artwork:focus-visible {
   outline: 2px solid var(--wg-bright);
   outline-offset: 4px;
+}
+
+/* Prevent 3D edge artefacts during the animation */
+
+.wg-slide {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* =========================================================
@@ -644,6 +685,7 @@
 @media (max-width: 480px) {
   .wg-page {
     padding-top: 15px;
+    padding-bottom: 15px;
   }
 
   .wg-page .wg-back {
@@ -698,6 +740,26 @@
       translateY(14%) rotateY(-35deg) scale(0.48);
   }
 
+  .wg-slide[data-position="-4"] {
+    transform: translate(-50%, -50%) translateX(-74%)
+      translateY(17%) rotateY(38deg) scale(0.4);
+  }
+
+  .wg-slide[data-position="4"] {
+    transform: translate(-50%, -50%) translateX(74%)
+      translateY(17%) rotateY(-38deg) scale(0.4);
+  }
+
+  .wg-slide[data-position="far-right"] {
+    transform: translate(-50%, -50%) translateX(90%)
+      translateY(18%) rotateY(-40deg) scale(0.35);
+  }
+
+  .wg-slide[data-position="far-left"] {
+    transform: translate(-50%, -50%) translateX(-90%)
+      translateY(18%) rotateY(40deg) scale(0.35);
+  }
+
   .wg-artwork-info {
     right: 8px;
     bottom: 10px;
@@ -741,41 +803,121 @@
     animation-duration: 0.01ms !important;
   }
 }
+/* =========================================================
+   DESKTOP: fill the visible area, card centred and bigger
+   ========================================================= */
 
-/* Fix image edges during 3D carousel animation */
+@media (min-width: 769px) {
+  .wg-page {
+    --wg-header: 83px; /* height of the AKHIL DAS header bar */
 
-.wg-fan-stage {
-  transform-style: preserve-3d;
+    padding: 0;
+    min-height: calc(100svh - var(--wg-header));
+  }
+
+  .wg-page .wg-gallery-area {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    margin: 0;
+  }
+
+  /* The carousel is as tall as the visible area, so the card ends up
+     with the same gap above and below it. */
+  .wg-page .wg-carousel {
+    height: calc(100svh - var(--wg-header));
+  }
+
+  /* Bigger card. Its height follows the screen height.
+     The 140px is the total gap (about 70px each side).
+     Lower it for a bigger card, raise it for a smaller one. */
+  .wg-page .wg-slide {
+    height: min(calc(100svh - var(--wg-header) - 140px), 680px);
+    width: auto;
+    aspect-ratio: 445 / 550;
+  }
+}
+/* =========================================================
+   MOBILE / TABLET: fill the visible area, card centred
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .wg-page {
+    --wg-header: 74px; /* height of the AKHIL DAS header bar on mobile */
+
+    padding: 0;
+    min-height: calc(100svh - var(--wg-header));
+  }
+
+  .wg-page .wg-gallery-area {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    margin: 0;
+  }
+
+  /* Carousel is as tall as the visible area, so the card has the
+     same gap above and below it. */
+  .wg-page .wg-carousel {
+    height: calc(100svh - var(--wg-header));
+  }
+
+  /* Bigger card: height follows the screen height, width follows the
+     card shape. 105vw keeps the card from getting wider than the
+     screen. The 110px is the total gap (about 55px each side);
+     lower it for a bigger card, raise it for a smaller one. */
+  .wg-page .wg-slide {
+    width: auto;
+    aspect-ratio: 445 / 550;
+    height: min(calc(100svh - var(--wg-header) - 110px), 105vw);
+  }
+}
+/* Mobile / tablet: move the card up so the gap above and below match */
+@media (max-width: 768px) {
+  .wg-page .wg-carousel {
+    top: -20px;
+  }
+}
+/* =========================================================
+   LIGHTBOX: keep the close button below the header
+   ========================================================= */
+
+.wg-lightbox {
+  --wg-header: 83px; /* height of the AKHIL DAS header bar (desktop) */
+
+  /* push the image and arrows down so they don't touch the header */
+  padding-top: calc(var(--wg-header) + 20px);
 }
 
-.wg-slide {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+.wg-lightbox .wg-lightbox-close {
+  top: calc(var(--wg-header) + 14px);
+  right: 22px;
+
+  display: grid;
+  place-items: center;
+
+  width: 40px;
+  height: 40px;
+
+  border: 1px solid #51432f;
+  border-radius: 50%;
+
+  background: rgba(17, 16, 13, 0.85);
+  font-size: 26px;
+  line-height: 1;
 }
 
-.wg-artwork {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  background: #111;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
+@media (max-width: 768px) {
+  .wg-lightbox {
+    --wg-header: 74px; /* header height on mobile */
+  }
 
-.wg-artwork img {
-  position: absolute;
-  top: -2px;
-  left: -2px;
+  .wg-lightbox .wg-lightbox-close {
+    top: calc(var(--wg-header) + 10px);
+    right: 14px;
 
-  width: calc(100% + 4px);
-  height: calc(100% + 4px);
-
-  display: block;
-  object-fit: cover;
-  object-position: center;
-
-  max-width: none;
-  border: none;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+  }
 }
