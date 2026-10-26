@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import "./drawing.css";
 
@@ -15,8 +14,6 @@ import tattoo10 from "../../assets/1d (14).jpg";
 import tattoo11 from "../../assets/1d (15).jpg";
 import tattoo12 from "../../assets/1d (18).jpg";
 
-
-
 const drawings = [
   tattoo1,
   tattoo2,
@@ -31,13 +28,15 @@ const drawings = [
   tattoo11,
   tattoo12,
 ];
+
 interface BackButtonProps {
   onClick: () => void;
 }
+
 const BackButton = ({ onClick }: BackButtonProps) => (
   <button
     type="button"
-    className="reviews-back"
+    className="drawings-back-btn"
     onClick={onClick}
     aria-label="Go back"
     title="Back"
@@ -57,6 +56,7 @@ const BackButton = ({ onClick }: BackButtonProps) => (
     </svg>
   </button>
 );
+
 interface DrawingsProps {
   onBackToHome: () => void;
 }
@@ -70,20 +70,15 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
       <div className="drawings-background" aria-hidden="true" />
       <div className="drawings-grain" aria-hidden="true" />
 
-      <header className="drawings-header">
-        
+      {/* Back arrow: direct child of the page, pinned to the top-left corner */}
       <BackButton onClick={onBackToHome} />
 
-
+      <header className="drawings-header">
         <h1>
           DRAW<span>INGS</span>
         </h1>
 
-        <div className="drawings-divider">
-          <span />
-          <i />
-          <span />
-        </div>
+       
       </header>
 
       {/* The images enter in a scattered 3D formation,
@@ -100,27 +95,22 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
             onClick={() => setSelectedImage(image)}
             aria-label={`View drawing ${index + 1}`}
           >
-            <span className="drawing-number">
-              {String(index + 1).padStart(2, "0")}
-            </span>
+            
 
             <img
               src={image}
               alt={`Original drawing ${index + 1}`}
               loading={index < 4 ? "eager" : "lazy"}
+              decoding="async"
               draggable={false}
             />
 
             <span className="drawing-card-overlay" />
-            <span className="drawing-expand">↗</span>
           </button>
         ))}
       </section>
 
-      <footer className="drawings-footer">
-        <span>ARTISTRY IN EVERY DETAIL</span>
-        <span>12 ORIGINAL WORKS</span>
-      </footer>
+      
 
       {/* Full image preview */}
       {selectedImage && (
@@ -130,8 +120,12 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
           role="presentation"
         >
           <button
+            type="button"
             className="drawing-close"
-            onClick={() => setSelectedImage(null)}
+            onClick={(event) => {
+              event.stopPropagation();
+              setSelectedImage(null);
+            }}
             aria-label="Close image"
           >
             ×

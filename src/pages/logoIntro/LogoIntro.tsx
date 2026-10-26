@@ -69,17 +69,7 @@ function LogoIntro({ onComplete }: LogoIntroProps) {
         <div className="intro-floor-light" />
       </div>
 
-      <div className="intro-copy">
-        <p className="intro-eyebrow">PRECISION • PASSION • ART</p>
-
-        <h1>
-          ART THAT <span>LIVES ON YOUR SKIN</span>
-        </h1>
-
-        <p className="intro-subtitle">
-          Every design tells a story.
-        </p>
-      </div>
+   
 
       <div className="intro-loader">
         <span />
@@ -96,7 +86,6 @@ function LogoIntro({ onComplete }: LogoIntroProps) {
 
       <div className="intro-bottomline">
         <span>TATTOO ARTIST</span>
-        <span>WELCOME TO MY WORLD</span>
       </div>
     </section>
   );

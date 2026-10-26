@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 import "./work.css";
@@ -149,26 +148,27 @@ function Work({ onBackToHome }: WorkProps) {
     ? tattoos.filter((tattoo) => tattoo.category === activeCategory)
     : [];
 
- const backgroundImage =
-  selectedImage ??
-  filteredTattoos[activeIndex] ??
-  filteredTattoos[0] ??
-  {
-    image: cubeBackground,
-    category: "Background",
-  };
+  const backgroundImage =
+    selectedImage ??
+    filteredTattoos[activeIndex] ??
+    filteredTattoos[0] ?? {
+      image: cubeBackground,
+      category: "Background",
+    };
 
   useEffect(() => {
     selectedImageRef.current = selectedImage;
   }, [selectedImage]);
 
-  // Preload all artwork for smoother background transitions.
+  // Preload and pre-decode only the opened category.
   useEffect(() => {
-    tattoos.forEach((tattoo) => {
+    filteredTattoos.forEach((tattoo) => {
       const image = new Image();
       image.src = tattoo.image;
+      image.decode?.().catch(() => {});
     });
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory]);
 
   useEffect(() => {
     return () => {
@@ -191,7 +191,7 @@ function Work({ onBackToHome }: WorkProps) {
 
     const timer = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % filteredTattoos.length);
-    }, 1800);
+    }, 2400);
 
     return () => window.clearInterval(timer);
   }, [
@@ -382,7 +382,6 @@ function Work({ onBackToHome }: WorkProps) {
 
   return (
     <section className="wg-page">
-      
       {/* Background follows the current artwork. */}
       {backgroundImage && (
         <div className="wg-page-background-container" aria-hidden="true">
@@ -392,23 +391,23 @@ function Work({ onBackToHome }: WorkProps) {
             alt=""
             className="wg-page-background"
             draggable={false}
+            decoding="async"
           />
         </div>
       )}
 
       <div className="wg-page-background-shade" aria-hidden="true" />
 
-     
+      {/* BACK BUTTON — rendered once, outside the perspective carousel */}
+      <BackButton
+        onClick={activeCategory ? backToCategories : onBackToHome}
+        label={activeCategory ? "Back to categories" : "Back to home"}
+      />
 
       {/* FIRST SCREEN: FOUR CATEGORY CARDS */}
       {!activeCategory ? (
         <section className="wg-category-screen">
-                 <BackButton
-        onClick={activeCategory ? backToCategories : onBackToHome}
-        label={activeCategory ? "Back to categories" : "Back to home"}
-      />
           <div className="wg-category-heading">
-      
             <h1>
               EXPLORE <em>THE WORK</em>
             </h1>
@@ -422,9 +421,6 @@ function Work({ onBackToHome }: WorkProps) {
                 className={`wg-category-card wg-category-card-${index + 1}`}
                 onClick={() => openCategory(category.title)}
               >
-                <span className="wg-category-number">
-                  0{index + 1}
-                </span>
 
                 <img
                   src={category.images[0]}
@@ -437,21 +433,17 @@ function Work({ onBackToHome }: WorkProps) {
 
                 <span className="wg-category-content">
                   <strong>{category.title}</strong>
-                  <span className="wg-category-subtitle">
-                  </span>
-                  
-                  <span className="wg-category-explore">
-                    EXPLORE WORK 
-                  </span>
+                  <span className="wg-category-subtitle"></span>
+
+                  <span className="wg-category-explore">EXPLORE WORK</span>
                 </span>
               </button>
             ))}
           </div>
         </section>
       ) : filteredTattoos.length > 0 ? (
-        /* EXISTING 3D CAROUSEL */
+        /* 3D CAROUSEL */
         <div className="wg-gallery-area">
-          
           <div
             className={`wg-carousel ${isDragging ? "is-dragging" : ""}`}
             onPointerDown={handlePointerDown}
@@ -460,10 +452,6 @@ function Work({ onBackToHome }: WorkProps) {
             onPointerCancel={handlePointerCancel}
             onDragStart={(event) => event.preventDefault()}
           >
-             <BackButton
-        onClick={activeCategory ? backToCategories : onBackToHome}
-        label={activeCategory ? "Back to categories" : "Back to home"}
-      />
             <div className="wg-fan-stage">
               {filteredTattoos.map((tattoo, index) => {
                 const offset = getCardPosition(index);
@@ -477,9 +465,7 @@ function Work({ onBackToHome }: WorkProps) {
 
                 return (
                   <article
-                    className={`wg-slide ${
-                      offset === 0 ? "is-active" : ""
-                    }`}
+                    className={`wg-slide ${offset === 0 ? "is-active" : ""}`}
                     data-position={position}
                     key={tattoo.image}
                     aria-hidden={!visible}
@@ -508,6 +494,8 @@ function Work({ onBackToHome }: WorkProps) {
                         src={tattoo.image}
                         alt={`${tattoo.category} artwork ${index + 1}`}
                         draggable={false}
+                        decoding="async"
+                        loading="eager"
                       />
 
                       <span className="wg-image-shade" />

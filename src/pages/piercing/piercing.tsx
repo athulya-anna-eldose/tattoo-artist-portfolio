@@ -111,12 +111,13 @@ function Piercing({ onBackToHome }: PiercingProps) {
     selectedImageRef.current = selectedImage;
   }, [selectedImage]);
 
-  // Preload the gallery photos to help avoid a blank flash when
-  // the background changes to another image.
+  // Preload and pre-decode the gallery photos so slides and the
+  // background never flash blank or stutter while decoding.
   useEffect(() => {
     tattoos.forEach((tattoo) => {
       const image = new Image();
       image.src = tattoo.image;
+      image.decode?.().catch(() => {});
     });
   }, []);
 
@@ -138,7 +139,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
       setActiveIndex(
         (current) => (current + 1) % filteredTattoos.length
       );
-    }, 1800);
+    }, 2400);
 
     return () => window.clearInterval(timer);
   }, [isDragging, selectedImage, filteredTattoos.length]);
@@ -304,12 +305,15 @@ function Piercing({ onBackToHome }: PiercingProps) {
             alt=""
             className="wg-page-background"
             draggable={false}
+            decoding="async"
           />
         </div>
       )}
 
       <div className="wg-page-background-shade" aria-hidden="true" />
 
+      {/* BACK BUTTON — direct child of .wg-page, outside the 3D carousel */}
+      <BackButton onClick={onBackToHome} label="Back to home" />
 
       {filteredTattoos.length > 0 ? (
         <div className="wg-gallery-area">
@@ -322,8 +326,6 @@ function Piercing({ onBackToHome }: PiercingProps) {
             onDragStart={(event) => event.preventDefault()}
           >
             <div className="wg-fan-stage">
-                    <BackButton onClick={onBackToHome} />
-
               {filteredTattoos.map((tattoo, index) => {
                 const offset = getCardPosition(index);
                 const visible = Math.abs(offset) <= 4;
@@ -367,6 +369,8 @@ function Piercing({ onBackToHome }: PiercingProps) {
                         src={tattoo.image}
                         alt={`Piercing artwork ${index + 1}`}
                         draggable={false}
+                        decoding="async"
+                        loading="eager"
                       />
 
                       <span className="wg-image-shade" />

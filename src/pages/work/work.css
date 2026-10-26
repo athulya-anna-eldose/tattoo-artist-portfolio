@@ -1,4 +1,3 @@
-
 /* =========================================================
    WORK PAGE — GLOBAL
    ========================================================= */
@@ -17,7 +16,6 @@
   width: 100%;
   min-height: calc(100svh - var(--wg-header));
   padding: 0;
-
   box-sizing: border-box;
   overflow: hidden;
 
@@ -78,13 +76,15 @@
 
 /* =========================================================
    BACK BUTTON
+   Rendered once, as a direct child of .wg-page
+   (outside the perspective carousel).
    ========================================================= */
 
 .wg-page .wg-back {
   position: fixed;
   top: calc(var(--wg-header) + 14px);
   left: 20px;
-  z-index: 100;
+  z-index: 200;
 
   display: grid;
   place-items: center;
@@ -122,49 +122,59 @@
 }
 
 /* =========================================================
-   CATEGORY INTRO — SCATTERED LAYOUT
-   Only the category screen uses this layout.
+   CATEGORY SCREEN — HORIZONTAL ROW
    ========================================================= */
 
 .wg-category-screen {
   position: relative;
   z-index: 2;
 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
   width: 100%;
   height: calc(100svh - var(--wg-header));
-  min-height: 620px;
+  min-height: 600px;
 
   flex: 1 0 auto;
   margin: 0;
-  padding: 0;
+  padding: 65px 5% 35px;
 
   box-sizing: border-box;
   overflow: hidden;
 
-  perspective: 1600px;
-  perspective-origin: 50% 45%;
-  transform-style: preserve-3d;
+  perspective: none;
+  perspective-origin: center;
+  transform-style: flat;
 }
 
-/* Heading stays above the scattered cards */
+/* =========================================================
+   CATEGORY HEADING
+   ========================================================= */
 
 .wg-category-heading {
-  position: absolute;
+  position: relative;
+  top: auto;
+  left: auto;
   z-index: 10;
 
-  top: 7%;
-  left: 50%;
+  width: 100%;
+  max-width: 800px;
 
-  width: min(600px, 85%);
-
-  margin: 0;
+  margin: 0 0 42px;
   text-align: center;
 
-  transform: translateX(-50%);
-  animation: wgCategoryHeading 800ms ease both;
+  transform: none;
+
+  animation: wgCategoryHeading 700ms ease both;
 }
 
 .wg-category-heading > span {
+  display: block;
+  margin-bottom: 10px;
+
   color: var(--wg-gold);
   font-size: 10px;
   font-weight: 600;
@@ -172,13 +182,13 @@
 }
 
 .wg-category-heading h1 {
-  margin: 12px 0;
+  margin: 0;
 
   color: #f5f0e8;
-  font-size: clamp(30px, 4vw, 49px);
+  font-size: clamp(30px, 3.5vw, 49px);
   font-weight: 500;
   letter-spacing: 5px;
-  line-height: 1.15;
+  line-height: 1.2;
 }
 
 .wg-category-heading h1 em {
@@ -187,7 +197,7 @@
 }
 
 .wg-category-heading p {
-  margin: 0;
+  margin: 12px 0 0;
 
   color: #c1b8aa;
   font-size: 12px;
@@ -195,31 +205,46 @@
 }
 
 /* =========================================================
-   FOUR SCATTERED CATEGORY CARDS
-   No grid. Each card occupies its own position.
+   CATEGORY GRID — FOUR EQUAL COLUMNS
    ========================================================= */
 
 .wg-category-grid {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  inset: auto;
+
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
 
   width: 100%;
-  height: 100%;
+  max-width: 1250px;
+  height: auto;
 
-  display: block;
+  gap: 22px;
+  margin: 0 auto;
 
-  perspective: 1600px;
-  transform-style: preserve-3d;
+  perspective: none;
+  transform-style: flat;
 }
 
-/* Shared card appearance */
+/* =========================================================
+   CATEGORY CARDS
+   ========================================================= */
 
-.wg-category-card {
-  position: absolute;
+.wg-category-card,
+.wg-category-card-1,
+.wg-category-card-2,
+.wg-category-card-3,
+.wg-category-card-4 {
+  position: relative;
+  inset: auto;
+  z-index: 1;
+
   display: block;
 
-  width: clamp(175px, 19vw, 260px);
-  aspect-ratio: 0.76;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 0.78;
 
   margin: 0;
   padding: 0;
@@ -235,155 +260,46 @@
 
   cursor: pointer;
 
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  transform: none;
+  transform-style: flat;
 
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.42);
 
-  animation:
-    wgCategoryScatterIn 1.3s
-    cubic-bezier(0.16, 0.8, 0.25, 1)
-    both;
-
-  animation-delay: calc(var(--card-index, 0) * 120ms);
+  animation: wgCardAppear 650ms ease both;
+  animation-delay: calc(var(--card-index, 0) * 100ms);
 
   transition:
-    border-color 350ms ease,
-    box-shadow 350ms ease,
-    filter 350ms ease;
+    border-color 300ms ease,
+    box-shadow 300ms ease,
+    filter 300ms ease;
 }
-
-/* Card 1 — upper left */
 
 .wg-category-card-1 {
   --card-index: 0;
-
-  top: 28%;
-  left: 8%;
-
-  z-index: 2;
-
-  transform: rotate(-12deg) rotateY(13deg) translateZ(20px);
 }
-
-/* Card 2 — right side, slightly tilted */
 
 .wg-category-card-2 {
   --card-index: 1;
-
-  top: 23%;
-  right: 10%;
-
-  z-index: 3;
-
-  transform: rotate(10deg) rotateY(-14deg) translateZ(70px);
 }
-
-/* Card 3 — lower middle-left */
 
 .wg-category-card-3 {
   --card-index: 2;
-
-  top: 57%;
-  left: 34%;
-
-  z-index: 4;
-
-  transform: rotate(7deg) rotateY(12deg) translateZ(100px);
 }
-
-/* Card 4 — lower right */
 
 .wg-category-card-4 {
   --card-index: 3;
-
-  top: 51%;
-  right: 9%;
-
-  z-index: 2;
-
-  transform: rotate(-9deg) rotateY(-12deg) translateZ(10px);
 }
 
-/* =========================================================
-   SCATTERED ENTRANCE ANIMATION
-   Cards fly in separately and settle into scattered
-   positions instead of assembling into a grid.
-   ========================================================= */
-
-@keyframes wgCategoryScatterIn {
-  0% {
+@keyframes wgCardAppear {
+  from {
     opacity: 0;
-    filter: blur(8px);
-
-    transform:
-      translate3d(
-        var(--start-x, 0),
-        var(--start-y, 0),
-        -500px
-      )
-      rotateX(var(--start-rx, 30deg))
-      rotateY(var(--start-ry, 35deg))
-      rotateZ(var(--start-rz, 20deg))
-      scale(0.35);
+    transform: translateY(14px);
   }
 
-  60% {
+  to {
     opacity: 1;
-    filter: blur(0);
-
-    transform:
-      translate3d(0, -10px, 35px)
-      rotateZ(0deg)
-      scale(1.04);
+    transform: translateY(0);
   }
-
-  78% {
-    transform:
-      translate3d(0, 3px, 0)
-      rotateZ(0deg)
-      scale(0.99);
-  }
-
-  100% {
-    opacity: 1;
-    filter: blur(0);
-  }
-}
-
-/* Different entrance directions */
-
-.wg-category-card-1 {
-  --start-x: -350px;
-  --start-y: -200px;
-  --start-rx: 35deg;
-  --start-ry: 45deg;
-  --start-rz: -35deg;
-}
-
-.wg-category-card-2 {
-  --start-x: 350px;
-  --start-y: -220px;
-  --start-rx: -30deg;
-  --start-ry: -40deg;
-  --start-rz: 30deg;
-}
-
-.wg-category-card-3 {
-  --start-x: -200px;
-  --start-y: 350px;
-  --start-rx: 25deg;
-  --start-ry: 35deg;
-  --start-rz: 25deg;
-}
-
-.wg-category-card-4 {
-  --start-x: 350px;
-  --start-y: 300px;
-  --start-rx: -35deg;
-  --start-ry: -35deg;
-  --start-rz: -30deg;
 }
 
 /* =========================================================
@@ -403,17 +319,21 @@
   object-fit: cover;
   object-position: center;
 
-  opacity: 0.88;
-  transform: scale(1.02);
+  opacity: 0.9;
+  transform: scale(1);
 
   transition:
-    transform 700ms cubic-bezier(0.2, 0.75, 0.25, 1),
-    opacity 400ms ease;
+    transform 500ms ease,
+    opacity 300ms ease;
 
   pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
 }
+
+/* =========================================================
+   CATEGORY IMAGE OVERLAY
+   ========================================================= */
 
 .wg-category-overlay {
   position: absolute;
@@ -437,6 +357,10 @@
   pointer-events: none;
 }
 
+/* =========================================================
+   CATEGORY NUMBER
+   ========================================================= */
+
 .wg-category-number {
   position: absolute;
   z-index: 2;
@@ -448,25 +372,29 @@
   letter-spacing: 2px;
 
   text-shadow: 0 2px 10px #000;
+
   pointer-events: none;
 }
 
-/* Card text */
+/* =========================================================
+   CATEGORY TEXT CONTENT
+   ========================================================= */
 
 .wg-category-content {
   position: absolute;
   z-index: 2;
 
-  right: 15px;
+  right: 14px;
   bottom: 17px;
-  left: 15px;
+  left: 14px;
 
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+
   gap: 10px;
 
-  transform: translateZ(25px);
+  transform: none;
   pointer-events: none;
 }
 
@@ -479,9 +407,9 @@
 
 .wg-category-content > strong {
   color: #fff;
-  font-size: clamp(14px, 1.4vw, 20px);
+  font-size: clamp(13px, 1.25vw, 19px);
   font-weight: 500;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .wg-category-subtitle {
@@ -494,7 +422,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
 
   width: 100%;
   margin-top: 5px;
@@ -512,23 +439,25 @@
   transition: transform 300ms ease;
 }
 
-/* Hover */
+/* =========================================================
+   CATEGORY CARD HOVER
+   ========================================================= */
 
 .wg-category-card:hover {
-  z-index: 20;
+  z-index: 2;
 
   border-color: var(--wg-bright);
 
   box-shadow:
-    0 30px 75px rgba(0, 0, 0, 0.65),
-    0 0 25px rgba(215, 173, 105, 0.18);
+    0 25px 55px rgba(0, 0, 0, 0.6),
+    0 0 22px rgba(215, 173, 105, 0.14);
 
-  filter: brightness(1.08);
+  filter: brightness(1.06);
 }
 
 .wg-category-card:hover .wg-category-image {
   opacity: 1;
-  transform: scale(1.09);
+  transform: scale(1.05);
 }
 
 .wg-category-card:hover .wg-category-explore > span {
@@ -537,23 +466,23 @@
 
 .wg-category-card:focus-visible {
   outline: 2px solid var(--wg-bright);
-  outline-offset: 5px;
+  outline-offset: 4px;
 }
 
 @keyframes wgCategoryHeading {
   from {
     opacity: 0;
-    transform: translate(-50%, 16px);
+    transform: translateY(12px);
   }
 
   to {
     opacity: 1;
-    transform: translate(-50%, 0);
+    transform: translateY(0);
   }
 }
 
 /* =========================================================
-   GALLERY AREA — KEEP EXISTING 3D CAROUSEL
+   GALLERY AREA — 3D TATTOO CAROUSEL
    ========================================================= */
 
 .wg-gallery-area {
@@ -596,6 +525,8 @@
   transform-style: preserve-3d;
 }
 
+/* Individual slides */
+
 .wg-slide {
   position: absolute;
   top: 50%;
@@ -623,7 +554,7 @@
   -webkit-backface-visibility: hidden;
 }
 
-/* Centre */
+/* Centre slide */
 
 .wg-slide[data-position="0"] {
   transform: translate(-50%, -50%) translateZ(80px) scale(1);
@@ -632,7 +563,7 @@
   z-index: 20;
 }
 
-/* Left side */
+/* Left slides */
 
 .wg-slide[data-position="-1"] {
   transform:
@@ -682,7 +613,7 @@
   filter: brightness(0.4);
 }
 
-/* Right side */
+/* Right slides */
 
 .wg-slide[data-position="1"] {
   transform:
@@ -889,7 +820,7 @@
 }
 
 /* =========================================================
-   LIGHTBOX — PRESERVED OPEN/CLOSE ANIMATIONS
+   FULL-SCREEN LIGHTBOX
    ========================================================= */
 
 .wg-lightbox {
@@ -956,6 +887,7 @@
   z-index: 2;
 
   display: block;
+
   max-width: 90vw;
   max-height: 76vh;
 
@@ -976,8 +908,6 @@
 .wg-lightbox.is-closing .wg-lightbox-img {
   animation: wgImageOut 280ms ease both;
 }
-
-/* Close button */
 
 .wg-lightbox .wg-lightbox-close {
   position: absolute;
@@ -1067,13 +997,23 @@
    ========================================================= */
 
 @keyframes wgBackdropIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes wgBackdropOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes wgImageIn {
@@ -1113,48 +1053,45 @@
 }
 
 /* =========================================================
-   TABLET
+   TABLET — UP TO 900px
    ========================================================= */
 
 @media (max-width: 900px) {
   .wg-category-screen {
-    min-height: 750px;
-    height: calc(100svh - var(--wg-header));
+    height: auto;
+    min-height: calc(100svh - var(--wg-header));
+
+    padding: 75px 5% 45px;
+    overflow: visible;
   }
 
   .wg-category-heading {
-    top: 9%;
-    width: 90%;
+    margin-bottom: 35px;
   }
 
-  .wg-category-card {
-    width: clamp(160px, 26vw, 220px);
+  .wg-category-heading h1 {
+    font-size: clamp(28px, 4vw, 38px);
+    letter-spacing: 3px;
   }
 
-  .wg-category-card-1 {
-    top: 27%;
-    left: 5%;
+  .wg-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
   }
 
-  .wg-category-card-2 {
-    top: 25%;
-    right: 5%;
-  }
-
-  .wg-category-card-3 {
-    top: 55%;
-    left: 25%;
-  }
-
+  .wg-category-card,
+  .wg-category-card-1,
+  .wg-category-card-2,
+  .wg-category-card-3,
   .wg-category-card-4 {
-    top: 54%;
-    right: 5%;
+    width: 100%;
+    aspect-ratio: 0.9;
   }
 
   .wg-category-content {
-    right: 10px;
-    bottom: 13px;
-    left: 10px;
+    right: 12px;
+    bottom: 14px;
+    left: 12px;
     gap: 8px;
   }
 
@@ -1162,8 +1099,8 @@
     font-size: 16px;
   }
 
-  .wg-category-subtitle {
-    font-size: 9px;
+  .wg-category-explore {
+    font-size: 8px;
   }
 
   .wg-slide {
@@ -1209,7 +1146,7 @@
 }
 
 /* =========================================================
-   MOBILE
+   MOBILE — UP TO 480px
    ========================================================= */
 
 @media (max-width: 480px) {
@@ -1217,9 +1154,13 @@
     --wg-header: 74px;
   }
 
+  /* FIX 1: back arrow sits in the top-left corner of the page.
+     .wg-page already starts below the header, so no header offset. */
   .wg-page .wg-back {
-    top: calc(var(--wg-header) + 10px);
+    position: absolute;
+    top: 12px;
     left: 12px;
+    z-index: 200;
 
     width: 32px;
     height: 32px;
@@ -1227,13 +1168,17 @@
   }
 
   .wg-category-screen {
-    height: calc(100svh - var(--wg-header));
-    min-height: 690px;
+    width: 100%;
+    height: auto;
+    min-height: calc(100svh - var(--wg-header));
+
+    padding: 70px 16px 30px;
+    overflow: visible;
   }
 
   .wg-category-heading {
-    top: 10%;
-    width: 90%;
+    width: 100%;
+    margin-bottom: 28px;
   }
 
   .wg-category-heading > span {
@@ -1242,7 +1187,7 @@
   }
 
   .wg-category-heading h1 {
-    font-size: 27px;
+    font-size: 25px;
     letter-spacing: 2px;
   }
 
@@ -1251,33 +1196,18 @@
     letter-spacing: 0.5px;
   }
 
-  .wg-category-card {
-    width: 42%;
-    aspect-ratio: 0.78;
+  .wg-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
   }
 
-  .wg-category-card-1 {
-    top: 27%;
-    left: 5%;
-    transform: rotate(-9deg);
-  }
-
-  .wg-category-card-2 {
-    top: 27%;
-    right: 5%;
-    transform: rotate(8deg);
-  }
-
-  .wg-category-card-3 {
-    top: 55%;
-    left: 7%;
-    transform: rotate(7deg);
-  }
-
+  .wg-category-card,
+  .wg-category-card-1,
+  .wg-category-card-2,
+  .wg-category-card-3,
   .wg-category-card-4 {
-    top: 55%;
-    right: 6%;
-    transform: rotate(-8deg);
+    width: 100%;
+    aspect-ratio: 0.78;
   }
 
   .wg-category-number {
@@ -1294,11 +1224,11 @@
   }
 
   .wg-category-content > strong {
-    font-size: 13px;
+    font-size: 12px;
+    line-height: 1.35;
   }
 
-  .wg-category-content > small,
-  .wg-category-explore {
+  .wg-category-content > small {
     font-size: 7px;
     letter-spacing: 0.8px;
   }
@@ -1308,8 +1238,14 @@
   }
 
   .wg-category-explore {
+    margin-top: 3px;
     padding-top: 8px;
+
+    font-size: 7px;
+    letter-spacing: 0.7px;
   }
+
+  /* ---------- Tattoo carousel ---------- */
 
   .wg-gallery-area {
     margin: 0;
@@ -1319,89 +1255,99 @@
     height: calc(100svh - var(--wg-header));
   }
 
+  /* FIX 2: smaller centre card (~60% of screen width)
+     so neighbouring cards stay visible. */
   .wg-slide {
     width: auto;
-    height: min(calc(100svh - var(--wg-header) - 110px), 105vw);
+    height: min(
+      calc(100svh - var(--wg-header) - 220px),
+      calc(60vw * 1.236),
+      340px
+    );
     aspect-ratio: 445 / 550;
+  }
+
+  .wg-slide[data-position="0"] {
+    transform: translate(-50%, -50%) translateZ(40px) scale(1);
   }
 
   .wg-slide[data-position="-1"] {
     transform:
       translate(-50%, -50%)
-      translateX(-24%)
-      translateY(5%)
-      rotateY(25deg)
-      scale(0.78);
+      translateX(-62%)
+      translateY(3%)
+      rotateY(28deg)
+      scale(0.8);
   }
 
   .wg-slide[data-position="1"] {
     transform:
       translate(-50%, -50%)
-      translateX(24%)
-      translateY(5%)
-      rotateY(-25deg)
-      scale(0.78);
+      translateX(62%)
+      translateY(3%)
+      rotateY(-28deg)
+      scale(0.8);
   }
 
   .wg-slide[data-position="-2"] {
     transform:
       translate(-50%, -50%)
-      translateX(-42%)
-      translateY(10%)
-      rotateY(32deg)
+      translateX(-100%)
+      translateY(7%)
+      rotateY(34deg)
       scale(0.62);
   }
 
   .wg-slide[data-position="2"] {
     transform:
       translate(-50%, -50%)
-      translateX(42%)
-      translateY(10%)
-      rotateY(-32deg)
+      translateX(100%)
+      translateY(7%)
+      rotateY(-34deg)
       scale(0.62);
   }
 
   .wg-slide[data-position="-3"] {
     transform:
       translate(-50%, -50%)
-      translateX(-60%)
-      translateY(14%)
-      rotateY(35deg)
+      translateX(-132%)
+      translateY(10%)
+      rotateY(38deg)
       scale(0.48);
   }
 
   .wg-slide[data-position="3"] {
     transform:
       translate(-50%, -50%)
-      translateX(60%)
-      translateY(14%)
-      rotateY(-35deg)
+      translateX(132%)
+      translateY(10%)
+      rotateY(-38deg)
       scale(0.48);
   }
 
   .wg-slide[data-position="-4"] {
     transform:
       translate(-50%, -50%)
-      translateX(-74%)
-      translateY(17%)
-      rotateY(38deg)
+      translateX(-160%)
+      translateY(12%)
+      rotateY(40deg)
       scale(0.4);
   }
 
   .wg-slide[data-position="4"] {
     transform:
       translate(-50%, -50%)
-      translateX(74%)
-      translateY(17%)
-      rotateY(-38deg)
+      translateX(160%)
+      translateY(12%)
+      rotateY(-40deg)
       scale(0.4);
   }
 
   .wg-slide[data-position="far-right"] {
     transform:
       translate(-50%, -50%)
-      translateX(90%)
-      translateY(18%)
+      translateX(185%)
+      translateY(14%)
       rotateY(-40deg)
       scale(0.35);
   }
@@ -1409,8 +1355,8 @@
   .wg-slide[data-position="far-left"] {
     transform:
       translate(-50%, -50%)
-      translateX(-90%)
-      translateY(18%)
+      translateX(-185%)
+      translateY(14%)
       rotateY(40deg)
       scale(0.35);
   }
@@ -1426,8 +1372,11 @@
     letter-spacing: 0.3px;
   }
 
+  /* ---------- Lightbox ---------- */
+
   .wg-lightbox {
     --lightbox-header: 74px;
+
     padding: calc(var(--lightbox-header) + 10px) 12px 20px;
   }
 
@@ -1463,6 +1412,7 @@
   .wg-category-card {
     opacity: 1;
     filter: none;
+    will-change: auto;
   }
 
   .wg-category-image,
@@ -1481,196 +1431,93 @@
 }
 
 /* =========================================================
-   CONTINUOUS FLOATING ANIMATION — CATEGORY CARDS ONLY
+   OVERRIDES — BACK ARROW + MOBILE CAROUSEL SIZE
    ========================================================= */
 
-.wg-category-card {
-  animation:
-    wgCategoryScatterIn 1.3s
-      cubic-bezier(0.16, 0.8, 0.25, 1) both,
-    wgCategoryFloat var(--float-duration, 6s)
-      ease-in-out infinite;
-
-  animation-delay:
-    calc(var(--card-index, 0) * 120ms),
-    calc(var(--card-index, 0) * -1.2s);
-
-  will-change: transform;
+/* Back arrow: same position on every screen size */
+section.wg-page > button.wg-back {
+  position: fixed !important;
+  top: calc(var(--wg-header) + 10px) !important;
+  left: 12px !important;
+  z-index: 2000 !important;
+  width: 34px !important;
+  height: 34px !important;
+  padding: 7px !important;
+  transform: none !important;
 }
 
-/* Each card floats with its own timing and movement */
-
-.wg-category-card-1 {
-  --float-duration: 5.8s;
-
-  animation-name: wgCategoryScatterIn, wgFloatOne;
+section.wg-page > button.wg-back:hover {
+  transform: none !important;
 }
 
-.wg-category-card-2 {
-  --float-duration: 7s;
-
-  animation-name: wgCategoryScatterIn, wgFloatTwo;
-}
-
-.wg-category-card-3 {
-  --float-duration: 6.4s;
-
-  animation-name: wgCategoryScatterIn, wgFloatThree;
-}
-
-.wg-category-card-4 {
-  --float-duration: 7.5s;
-
-  animation-name: wgCategoryScatterIn, wgFloatFour;
-}
-
-/* Upper-left card */
-
-@keyframes wgFloatOne {
-  0%, 100% {
-    transform: rotate(-12deg) rotateY(13deg) translateY(0);
+/* Mobile carousel: bigger centre card, neighbours still visible */
+@media (max-width: 480px) {
+  section.wg-page .wg-slide {
+    height: min(calc(100svh - var(--wg-header) - 200px), calc(68vw * 1.236), 360px) !important;
+    width: auto !important;
+    aspect-ratio: 445 / 550 !important;
   }
 
-  50% {
-    transform:
-      rotate(-8deg)
-      rotateY(18deg)
-      translate3d(9px, -16px, 20px);
-  }
-}
-
-/* Upper-right card */
-
-@keyframes wgFloatTwo {
-  0%, 100% {
-    transform: rotate(10deg) rotateY(-14deg) translateY(0);
-  }
-
-  50% {
-    transform:
-      rotate(6deg)
-      rotateY(-19deg)
-      translate3d(-12px, 13px, 25px);
-  }
-}
-
-/* Lower-middle card */
-
-@keyframes wgFloatThree {
-  0%, 100% {
-    transform: rotate(7deg) rotateY(12deg) translateY(0);
-  }
-
-  50% {
-    transform:
-      rotate(11deg)
-      rotateY(7deg)
-      translate3d(-10px, -18px, 15px);
-  }
-}
-
-/* Lower-right card */
-
-@keyframes wgFloatFour {
-  0%, 100% {
-    transform: rotate(-9deg) rotateY(-12deg) translateY(0);
-  }
-
-  50% {
-    transform:
-      rotate(-5deg)
-      rotateY(-7deg)
-      translate3d(10px, -13px, 20px);
-  }
-}
-
-/* Pause movement while hovering or using keyboard focus */
-
-.wg-category-card:hover,
-.wg-category-card:focus-visible {
-  animation-play-state: paused, paused;
-}
-
-/* Disable continuous motion when reduced motion is requested */
-
-@media (prefers-reduced-motion: reduce) {
-  .wg-category-card {
-    animation: none !important;
-    will-change: auto;
-  }
+  section.wg-page .wg-slide[data-position="0"]  { transform: translate(-50%, -50%) translateZ(40px) scale(1) !important; }
+  section.wg-page .wg-slide[data-position="-1"] { transform: translate(-50%, -50%) translateX(-60%) translateY(3%) rotateY(28deg) scale(0.8) !important; }
+  section.wg-page .wg-slide[data-position="1"]  { transform: translate(-50%, -50%) translateX(60%) translateY(3%) rotateY(-28deg) scale(0.8) !important; }
+  section.wg-page .wg-slide[data-position="-2"] { transform: translate(-50%, -50%) translateX(-92%) translateY(7%) rotateY(34deg) scale(0.62) !important; }
+  section.wg-page .wg-slide[data-position="2"]  { transform: translate(-50%, -50%) translateX(92%) translateY(7%) rotateY(-34deg) scale(0.62) !important; }
+  section.wg-page .wg-slide[data-position="-3"] { transform: translate(-50%, -50%) translateX(-120%) translateY(10%) rotateY(38deg) scale(0.48) !important; }
+  section.wg-page .wg-slide[data-position="3"]  { transform: translate(-50%, -50%) translateX(120%) translateY(10%) rotateY(-38deg) scale(0.48) !important; }
+  section.wg-page .wg-slide[data-position="-4"] { transform: translate(-50%, -50%) translateX(-145%) translateY(12%) rotateY(40deg) scale(0.4) !important; }
+  section.wg-page .wg-slide[data-position="4"]  { transform: translate(-50%, -50%) translateX(145%) translateY(12%) rotateY(-40deg) scale(0.4) !important; }
 }
 
 /* =========================================================
-   CATEGORY CARD POSITIONS — PREVENT OVERLAPPING
-   Keep all four cards close together as one group.
+   PERFORMANCE FIXES (no loss of image quality)
    ========================================================= */
 
-/* Black & Grey */
-.wg-category-card-1 {
-  top: 28%;
-  left: 16%;
+/* Animate transform + opacity only (GPU-composited), never filter */
+.wg-slide {
+  filter: none !important;
+  transform-style: flat !important;
+  transition:
+    transform 650ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    opacity 500ms ease !important;
+  will-change: transform, opacity;
+  contain: layout style;
 }
 
-/* Minimal Line Works */
-.wg-category-card-2 {
-  top: 25%;
-  right: 27%;
+/* Cheap dimming overlay instead of brightness() */
+.wg-artwork::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: #000;
+  opacity: var(--dim, 0);
+  transition: opacity 500ms ease;
+  pointer-events: none;
 }
 
-/* Portraits & Mini Portraits */
-.wg-category-card-3 {
-  top: 53%;
-  left: 39%;
+.wg-slide[data-position="-1"], .wg-slide[data-position="1"] { --dim: 0.10; }
+.wg-slide[data-position="-2"], .wg-slide[data-position="2"] { --dim: 0.28; }
+.wg-slide[data-position="-3"], .wg-slide[data-position="3"] { --dim: 0.45; }
+.wg-slide[data-position="-4"], .wg-slide[data-position="4"] { --dim: 0.60; }
+
+/* Fully hidden slides cost nothing */
+.wg-slide[data-position="far-left"],
+.wg-slide[data-position="far-right"] {
+  visibility: hidden;
+  transition:
+    transform 650ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    opacity 500ms ease,
+    visibility 0s linear 650ms !important;
 }
 
-/* Healed Works */
-.wg-category-card-4 {
-  top: 49%;
-  right: 16%;
+/* Lighter shadow on side cards (active card keeps its gold glow) */
+.wg-slide:not([data-position="0"]) .wg-artwork {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
 }
 
-/* Tablet */
-@media (max-width: 900px) {
-  .wg-category-card-1 {
-    top: 29%;
-    left: 5%;
-  }
-
-  .wg-category-card-2 {
-    top: 27%;
-    right: 5%;
-  }
-
-  .wg-category-card-3 {
-    top: 55%;
-    left: 20%;
-  }
-
-  .wg-category-card-4 {
-    top: 53%;
-    right: 5%;
-  }
-}
-
-/* Mobile: compact, separate two-by-two arrangement */
-@media (max-width: 480px) {
-  .wg-category-card-1 {
-    top: 28%;
-    left: 4%;
-  }
-
-  .wg-category-card-2 {
-    top: 28%;
-    right: 4%;
-  }
-
-  .wg-category-card-3 {
-    top: 55%;
-    left: 4%;
-  }
-
-  .wg-category-card-4 {
-    top: 55%;
-    right: 4%;
-  }
+/* Cheaper background blur (background is dark and soft anyway) */
+.wg-page .wg-page-background {
+  filter: blur(4px) brightness(0.48) saturate(1.1);
+  transform: translateZ(0) scale(1.04);
 }

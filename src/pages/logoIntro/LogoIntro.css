@@ -758,3 +758,44 @@
     transition-duration: 0.01ms !important;
   }
 }
+/* ===== PURE BLACK BACKGROUND ===== */
+
+.logo-intro {
+  background: #000;
+}
+
+/* remove the brown ambient glows */
+.intro-orb {
+  display: none;
+}
+
+/* keep the vignette, but neutral and light */
+.intro-vignette {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+
+/* make the logo square merge into the black */
+.intro-logo-frame {
+  background: #000;
+  border: none;
+  box-shadow: none;
+}
+
+/* subtle film grain stays, a little softer */
+.intro-grain {
+  opacity: 0.05;
+}
+
+/* gold glow behind the logo, so black doesn't feel flat */
+.intro-halo {
+  background: radial-gradient(
+    circle,
+    rgba(215, 173, 105, 0.22) 0%,
+    rgba(215, 173, 105, 0.08) 42%,
+    transparent 72%
+  );
+}

@@ -1,4 +1,3 @@
-
 /* ==========================================
    DRAWINGS — 3D ASSEMBLY GALLERY
    ========================================== */
@@ -7,6 +6,7 @@
   --draw-gold: #d7ad69;
   --draw-white: #f4f0e9;
   --draw-muted: #a7a19a;
+  --draw-header: 83px; /* height of the AKHIL DAS header bar */
 
   position: relative;
   isolation: isolate;
@@ -61,6 +61,48 @@
 }
 
 /* ==========================================
+   BACK ARROW — top-left corner of the page
+   ========================================== */
+
+.drawings-page .drawings-back-btn {
+  position: absolute;
+  top: 14px;
+  left: 20px;
+  z-index: 50;
+
+  display: grid;
+  place-items: center;
+
+  width: 38px;
+  height: 38px;
+  padding: 8px;
+
+  border: 1px solid rgba(215, 173, 105, 0.55);
+  border-radius: 50%;
+
+  background: rgba(12, 11, 9, 0.85);
+  color: #e8e1d6;
+
+  cursor: pointer;
+  transition:
+    color 250ms ease,
+    border-color 250ms ease,
+    background 250ms ease;
+}
+
+.drawings-page .drawings-back-btn:hover {
+  color: var(--draw-gold);
+  border-color: var(--draw-gold);
+  background: #17130e;
+}
+
+.drawings-page .drawings-back-btn svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ==========================================
    HEADER
    ========================================== */
 
@@ -71,35 +113,6 @@
   margin: 0 auto 38px;
 
   animation: headerReveal 900ms ease both;
-}
-
-.drawings-back {
-  position: absolute;
-  top: 0;
-  left: 0;
-
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-
-  padding: 10px 15px;
-  color: #e8e1d6;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.23);
-
-  font-size: 12px;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition:
-    color 250ms ease,
-    border-color 250ms ease,
-    background 250ms ease;
-}
-
-.drawings-back:hover {
-  color: var(--draw-gold);
-  border-color: var(--draw-gold);
-  background: rgba(215, 173, 105, 0.06);
 }
 
 .drawings-eyebrow {
@@ -201,11 +214,11 @@
   backface-visibility: hidden;
 
   animation:
-  drawingAssemble 5.5s
-  cubic-bezier(0.16, 0.78, 0.24, 1)
-  both;
+    drawingAssemble 5.5s
+    cubic-bezier(0.16, 0.78, 0.24, 1)
+    both;
 
-animation-delay: calc(var(--index) * 100ms);
+  animation-delay: calc(var(--index) * 100ms);
 
   transition:
     border-color 350ms ease,
@@ -326,7 +339,6 @@ animation-delay: calc(var(--index) * 100ms);
    into their natural grid positions. */
 
 @keyframes drawingAssemble {
-  /* Stage 1: Slowly enter from scattered 3D positions */
   0% {
     opacity: 0;
     transform:
@@ -353,7 +365,6 @@ animation-delay: calc(var(--index) * 100ms);
       scale(0.75);
   }
 
-  /* Stage 2: Complete the entrance and begin the orbit */
   48% {
     opacity: 1;
     transform:
@@ -364,7 +375,6 @@ animation-delay: calc(var(--index) * 100ms);
       scale(0.92);
   }
 
-  /* Stage 3: Settle into the final gallery positions */
   76% {
     opacity: 1;
     transform:
@@ -512,6 +522,8 @@ animation-delay: calc(var(--index) * 100ms);
 
 /* ==========================================
    FULL IMAGE LIGHTBOX
+   The close button and image start below the
+   site header so nothing overlaps it.
    ========================================== */
 
 .drawing-lightbox {
@@ -523,7 +535,7 @@ animation-delay: calc(var(--index) * 100ms);
   justify-content: center;
   align-items: center;
 
-  padding: 35px;
+  padding: calc(var(--draw-header) + 20px) 35px 35px;
   box-sizing: border-box;
 
   background: rgba(0, 0, 0, 0.96);
@@ -536,7 +548,7 @@ animation-delay: calc(var(--index) * 100ms);
 .drawing-lightbox img {
   display: block;
   max-width: 90vw;
-  max-height: 88vh;
+  max-height: calc(100svh - var(--draw-header) - 70px);
   width: auto;
   height: auto;
 
@@ -547,23 +559,34 @@ animation-delay: calc(var(--index) * 100ms);
   cursor: default;
 }
 
-.drawing-close {
+.drawing-lightbox .drawing-close {
   position: absolute;
-  top: 20px;
-  right: 27px;
+  top: calc(var(--draw-header) + 14px);
+  right: 22px;
+  z-index: 3;
 
-  color: white;
-  background: transparent;
-  border: 0;
+  display: grid;
+  place-items: center;
 
-  font-size: 38px;
-  font-weight: 200;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+
+  color: #fff;
+  background: rgba(17, 16, 13, 0.85);
+  border: 1px solid #51432f;
+  border-radius: 50%;
+
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1;
   cursor: pointer;
-  transition: color 200ms ease;
+  transition: color 200ms ease, border-color 200ms ease;
 }
 
-.drawing-close:hover {
+.drawing-lightbox .drawing-close:hover {
   color: var(--draw-gold);
+  border-color: var(--draw-gold);
 }
 
 @keyframes lightboxFade {
@@ -633,14 +656,25 @@ animation-delay: calc(var(--index) * 100ms);
    MOBILE
    ========================================== */
 
-@media (max-width: 560px) {
+@media (max-width: 768px) {
   .drawings-page {
-    padding: 75px 15px 22px;
+    --draw-header: 74px; /* header height on mobile */
+  }
+}
+
+@media (max-width: 560px) {
+  /* Less top padding = heading sits higher */
+  .drawings-page {
+    padding: 58px 15px 22px;
   }
 
-  .drawings-back {
-    top: -53px;
-    left: 0;
+  .drawings-page .drawings-back-btn {
+    top: 12px;
+    left: 12px;
+
+    width: 34px;
+    height: 34px;
+    padding: 7px;
   }
 
   .drawings-header {
@@ -696,12 +730,21 @@ animation-delay: calc(var(--index) * 100ms);
   }
 
   .drawing-lightbox {
-    padding: 15px;
+    padding: calc(var(--draw-header) + 20px) 15px 20px;
   }
 
   .drawing-lightbox img {
     max-width: 94vw;
-    max-height: 82vh;
+    max-height: calc(100svh - var(--draw-header) - 60px);
+  }
+
+  .drawing-lightbox .drawing-close {
+    top: calc(var(--draw-header) + 10px);
+    right: 14px;
+
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
   }
 }
 

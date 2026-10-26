@@ -51,11 +51,9 @@
   max-width: none;
   max-height: none;
 
-  /* Fill the page with the source photo, not a carousel card. */
   object-fit: cover;
   object-position: center center;
 
-  /* Lower blur keeps the photo recognizable. */
   filter: blur(7px) brightness(0.48) saturate(1.1);
   opacity: 0.9;
 
@@ -63,8 +61,6 @@
   user-select: none;
   -webkit-user-drag: none;
 }
-
-/* Darken the background without hiding the photo. */
 
 .wg-page-background-shade {
   position: absolute;
@@ -74,8 +70,6 @@
   background: rgba(5, 5, 5, 0.12);
   pointer-events: none;
 }
-
-/* Keep page content above the background. */
 
 .wg-gallery-area,
 .wg-empty {
@@ -124,11 +118,6 @@
    CAROUSEL
    ========================================================= */
 
-/*
- * The gallery area fills the remaining page height and centres the
- * carousel vertically, so there is no empty strip at the bottom
- * (desktop and mobile).
- */
 .wg-gallery-area {
   flex: 1 1 auto;
   display: flex;
@@ -142,8 +131,6 @@
   width: 100%;
   height: clamp(480px, 48vw, 650px);
 
-  /* visible so cards pushed down by translateY are never clipped.
-     .wg-page already has overflow: hidden, so nothing spills out. */
   overflow: visible;
   perspective: 1400px;
   perspective-origin: center center;
@@ -256,9 +243,7 @@
   filter: brightness(0.4);
 }
 
-/* Hidden cards: wait off-screen at full transparency, so no stray
-   cards show behind the carousel. New cards enter from the right
-   and travel to the left. */
+/* Hidden cards */
 
 .wg-slide[data-position="far-right"] {
   transform: translate(-50%, -50%) translateX(95%)
@@ -293,7 +278,7 @@
   border: 1px solid rgba(215, 173, 105, 0.25);
   border-radius: 2px;
 
-  background: transparent; /* no dark fill showing at the edges */
+  background: transparent;
   color: var(--wg-ivory);
   text-align: left;
 
@@ -319,8 +304,6 @@
   object-fit: cover;
   object-position: center;
 
-  /* Slightly over-scale so any dark edge in the photo (or at the
-     card sides during 3D animation) is cropped out. */
   transform: scale(1.12);
 
   border: none;
@@ -357,8 +340,6 @@
   pointer-events: none;
 }
 
-/* Card labels */
-
 .wg-artwork-info {
   position: absolute;
   right: 16px;
@@ -387,8 +368,6 @@
   outline: 2px solid var(--wg-bright);
   outline-offset: 4px;
 }
-
-/* Prevent 3D edge artefacts during the animation */
 
 .wg-slide {
   backface-visibility: hidden;
@@ -444,8 +423,6 @@
   animation: wg-backdrop-out 0.28s ease forwards;
 }
 
-/* Full-screen blurred background in the lightbox */
-
 .wg-lightbox .wg-lightbox-bg {
   position: absolute;
   inset: 0;
@@ -468,8 +445,6 @@
   -webkit-user-drag: none;
 }
 
-/* Dark overlay */
-
 .wg-lightbox .wg-lightbox-shade {
   position: absolute;
   inset: 0;
@@ -478,8 +453,6 @@
   background: rgba(5, 5, 5, 0.3);
   pointer-events: none;
 }
-
-/* Sharp foreground image */
 
 .wg-lightbox .wg-lightbox-img {
   position: relative;
@@ -507,8 +480,6 @@
   animation: wg-image-out 0.28s ease forwards;
 }
 
-/* Close button */
-
 .wg-lightbox .wg-lightbox-close {
   position: absolute;
   top: 12px;
@@ -532,8 +503,6 @@
   color: var(--wg-bright);
 }
 
-/* Caption */
-
 .wg-lightbox .wg-lightbox-caption {
   position: relative;
   z-index: 2;
@@ -544,8 +513,6 @@
 
   animation: wg-fade-up 0.5s ease 0.15s both;
 }
-
-/* Previous / next buttons */
 
 .wg-lightbox .wg-lightbox-navigation {
   position: relative;
@@ -803,13 +770,14 @@
     animation-duration: 0.01ms !important;
   }
 }
+
 /* =========================================================
    DESKTOP: fill the visible area, card centred and bigger
    ========================================================= */
 
 @media (min-width: 769px) {
   .wg-page {
-    --wg-header: 83px; /* height of the AKHIL DAS header bar */
+    --wg-header: 83px;
 
     padding: 0;
     min-height: calc(100svh - var(--wg-header));
@@ -822,28 +790,24 @@
     margin: 0;
   }
 
-  /* The carousel is as tall as the visible area, so the card ends up
-     with the same gap above and below it. */
   .wg-page .wg-carousel {
     height: calc(100svh - var(--wg-header));
   }
 
-  /* Bigger card. Its height follows the screen height.
-     The 140px is the total gap (about 70px each side).
-     Lower it for a bigger card, raise it for a smaller one. */
   .wg-page .wg-slide {
     height: min(calc(100svh - var(--wg-header) - 140px), 680px);
     width: auto;
     aspect-ratio: 445 / 550;
   }
 }
+
 /* =========================================================
    MOBILE / TABLET: fill the visible area, card centred
    ========================================================= */
 
 @media (max-width: 768px) {
   .wg-page {
-    --wg-header: 74px; /* height of the AKHIL DAS header bar on mobile */
+    --wg-header: 74px;
 
     padding: 0;
     min-height: calc(100svh - var(--wg-header));
@@ -856,36 +820,30 @@
     margin: 0;
   }
 
-  /* Carousel is as tall as the visible area, so the card has the
-     same gap above and below it. */
   .wg-page .wg-carousel {
     height: calc(100svh - var(--wg-header));
   }
 
-  /* Bigger card: height follows the screen height, width follows the
-     card shape. 105vw keeps the card from getting wider than the
-     screen. The 110px is the total gap (about 55px each side);
-     lower it for a bigger card, raise it for a smaller one. */
   .wg-page .wg-slide {
     width: auto;
     aspect-ratio: 445 / 550;
     height: min(calc(100svh - var(--wg-header) - 110px), 105vw);
   }
 }
-/* Mobile / tablet: move the card up so the gap above and below match */
+
 @media (max-width: 768px) {
   .wg-page .wg-carousel {
     top: -20px;
   }
 }
+
 /* =========================================================
    LIGHTBOX: keep the close button below the header
    ========================================================= */
 
 .wg-lightbox {
-  --wg-header: 83px; /* height of the AKHIL DAS header bar (desktop) */
+  --wg-header: 83px;
 
-  /* push the image and arrows down so they don't touch the header */
   padding-top: calc(var(--wg-header) + 20px);
 }
 
@@ -909,7 +867,7 @@
 
 @media (max-width: 768px) {
   .wg-lightbox {
-    --wg-header: 74px; /* header height on mobile */
+    --wg-header: 74px;
   }
 
   .wg-lightbox .wg-lightbox-close {
@@ -920,4 +878,77 @@
     height: 36px;
     font-size: 24px;
   }
+}
+
+/* =========================================================
+   FIX 1 — BACK ARROW (now a direct child of .wg-page)
+   Sits just under the header, top-left, on every screen size.
+   ========================================================= */
+
+section.wg-page > button.wg-back {
+  position: fixed !important;
+  top: calc(var(--wg-header) + 10px) !important;
+  left: 12px !important;
+  z-index: 2000 !important;
+  width: 34px !important;
+  height: 34px !important;
+  padding: 7px !important;
+  transform: none !important;
+}
+
+section.wg-page > button.wg-back:hover {
+  transform: none !important;
+}
+
+/* =========================================================
+   FIX 2 — PERFORMANCE (no loss of image quality)
+   ========================================================= */
+
+/* Animate transform + opacity only (GPU-composited), never filter */
+.wg-slide {
+  filter: none !important;
+  transform-style: flat !important;
+  transition:
+    transform 650ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    opacity 500ms ease !important;
+  will-change: transform, opacity;
+  contain: layout style;
+}
+
+/* Cheap dimming overlay instead of brightness() */
+.wg-artwork::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: #000;
+  opacity: var(--dim, 0);
+  transition: opacity 500ms ease;
+  pointer-events: none;
+}
+
+.wg-slide[data-position="-1"], .wg-slide[data-position="1"] { --dim: 0.10; }
+.wg-slide[data-position="-2"], .wg-slide[data-position="2"] { --dim: 0.28; }
+.wg-slide[data-position="-3"], .wg-slide[data-position="3"] { --dim: 0.45; }
+.wg-slide[data-position="-4"], .wg-slide[data-position="4"] { --dim: 0.60; }
+
+/* Fully hidden slides cost nothing */
+.wg-slide[data-position="far-left"],
+.wg-slide[data-position="far-right"] {
+  visibility: hidden;
+  transition:
+    transform 650ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    opacity 500ms ease,
+    visibility 0s linear 650ms !important;
+}
+
+/* Lighter shadow on side cards (active card keeps its gold glow) */
+.wg-slide:not([data-position="0"]) .wg-artwork {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55);
+}
+
+/* Cheaper background blur (background is dark and soft anyway) */
+.wg-page .wg-page-background {
+  filter: blur(4px) brightness(0.48) saturate(1.1);
+  transform: translateZ(0) scale(1.04);
 }

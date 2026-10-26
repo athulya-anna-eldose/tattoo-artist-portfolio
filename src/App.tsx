@@ -55,7 +55,7 @@ function App() {
         </div>
 
         <div className="nav-links">
-          <button onClick={() => setCurrentPage("work")}>Work</button>
+          {/* <button onClick={() => setCurrentPage("work")}>Work</button> */}
           <button onClick={() => setCurrentPage("reviews")}>Reviews</button>
           <button onClick={() => setCurrentPage("contact")}>Contact</button>
         </div>

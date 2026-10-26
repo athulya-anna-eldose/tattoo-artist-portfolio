@@ -93,7 +93,7 @@
 .cp__nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+justify-content: flex-end;
   height: 8.6cqw;
   min-height: 52px;
   border-bottom: 1px solid rgba(239, 233, 220, 0.14);
@@ -137,8 +137,13 @@
   color: var(--color-text);
   text-decoration: none;
   transition: background 0.2s;
+  margin-right: -12cqw;
 }
-
+@media (max-width: 560px) {
+  .cp__pill {
+    margin-right: 0;
+  }
+}
 .cp__pill:hover {
   background: var(--color-pill-hover);
 }
