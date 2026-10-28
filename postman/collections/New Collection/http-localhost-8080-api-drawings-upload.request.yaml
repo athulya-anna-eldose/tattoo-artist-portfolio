@@ -1,0 +1,21 @@
+$kind: http-request
+name: http://localhost:8080/api/drawings/upload
+description: 'Generated from cURL: curl.exe -X POST "http://localhost:8080/api/drawings/upload" -F "file=@C:/Users/DELL/Desktop/drawing.jpg" -F "name=Portrait Sketch" -F "description=Pencil portrait drawing" -F "price=1500"'
+url: http://localhost:8080/api/drawings/upload
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src: C:/Users/DELL/Desktop/drawing.jpg
+    - type: text
+      key: name
+      value: Portrait Sketch
+    - type: text
+      key: description
+      value: Pencil portrait drawing
+    - type: text
+      key: price
+      value: "1500"
+order: 4000

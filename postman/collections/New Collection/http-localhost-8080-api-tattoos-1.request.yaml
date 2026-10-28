@@ -1,0 +1,12 @@
+$kind: http-request
+name: http://localhost:8080/api/tattoos
+description: "Generated from cURL: curl http://localhost:8080/api/tattoos"
+url: http://localhost:8080/api/tattoos
+method: GET
+settings:
+  protocolVersion: auto
+  strictSSL: false
+  followRedirects: true
+  disableCookies: false
+  maxResponseSize: 52428800
+order: 8000

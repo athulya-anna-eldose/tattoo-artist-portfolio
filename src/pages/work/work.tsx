@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 import "./work.css";
 import cubeBackground from "../../assets/close-up-colorful-cube-pattern-with-black-background-generative-ai_958192-97660.avif";
+import deleteIcon from "../../assets/images.png";
 
 import tattoo1 from "../../assets/1.jpg";
 import tattoo2 from "../../assets/2.jpg";
@@ -48,8 +49,17 @@ interface WorkProps {
 }
 
 interface Tattoo {
+  id: string;
   image: string;
   category: string;
+  uploaded: boolean;
+}
+
+interface UploadedImage {
+  id: string;
+  category: string;
+  src: string;
+  backendId?: number;
 }
 
 interface Category {
@@ -88,12 +98,202 @@ const categories: Category[] = [
   },
 ];
 
-const tattoos: Tattoo[] = categories.flatMap((category) =>
-  category.images.map((image) => ({
+const baseByCategory: Record<string, Tattoo[]> = {};
+
+categories.forEach((category) => {
+  baseByCategory[category.title] = category.images.map((image, i) => ({
+    id: `base-${i}`,
     image,
     category: category.title,
-  }))
-);
+    uploaded: false,
+  }));
+});
+
+/* ---------------------------------------------------------
+   Backend API
+   --------------------------------------------------------- */
+
+const API_URL = "http://localhost:8080/api/tattoos";
+
+/* ---------------------------------------------------------
+   Saved image order + deleted images
+   --------------------------------------------------------- */
+
+const ORDER_STORAGE_KEY = "wg-image-order-v2";
+const OLD_ORDER_STORAGE_KEY = "wg-image-order-v1";
+const HIDDEN_STORAGE_KEY = "wg-image-hidden-v2";
+const OLD_HIDDEN_STORAGE_KEY = "wg-image-hidden-v1";
+
+type IdMap = Record<string, string[]>;
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((v) => typeof v === "string");
+
+const loadOrders = (): IdMap => {
+  const result: IdMap = {};
+
+  try {
+    const oldRaw = localStorage.getItem(OLD_ORDER_STORAGE_KEY);
+
+    if (oldRaw) {
+      const old = JSON.parse(oldRaw) as Record<string, number[]>;
+
+      categories.forEach((category) => {
+        const saved = old?.[category.title];
+        const n = category.images.length;
+
+        const valid =
+          Array.isArray(saved) &&
+          saved.length === n &&
+          new Set(saved).size === n &&
+          saved.every(
+            (i) => Number.isInteger(i) && i >= 0 && i < n
+          );
+
+        if (valid) {
+          result[category.title] = (saved as number[]).map(
+            (i) => `base-${i}`
+          );
+        }
+      });
+    }
+
+    const raw = localStorage.getItem(ORDER_STORAGE_KEY);
+
+    if (raw) {
+      const saved = JSON.parse(raw);
+
+      if (saved && typeof saved === "object") {
+        Object.keys(saved).forEach((key) => {
+          if (isStringArray(saved[key])) {
+            result[key] = saved[key];
+          }
+        });
+      }
+    }
+  } catch {
+    // Use default order if storage is unavailable or corrupted.
+  }
+
+  return result;
+};
+
+const loadHidden = (): IdMap => {
+  const result: IdMap = {};
+
+  try {
+    const oldRaw = localStorage.getItem(OLD_HIDDEN_STORAGE_KEY);
+
+    if (oldRaw) {
+      const old = JSON.parse(oldRaw) as Record<string, number[]>;
+
+      categories.forEach((category) => {
+        const saved = old?.[category.title];
+
+        if (Array.isArray(saved)) {
+          const ids = saved
+            .filter((i) => Number.isInteger(i))
+            .map((i) => `base-${i}`);
+
+          if (ids.length > 0) {
+            result[category.title] = ids;
+          }
+        }
+      });
+    }
+
+    const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
+
+    if (raw) {
+      const saved = JSON.parse(raw);
+
+      if (saved && typeof saved === "object") {
+        Object.keys(saved).forEach((key) => {
+          if (isStringArray(saved[key])) {
+            result[key] = saved[key];
+          }
+        });
+      }
+    }
+  } catch {
+    // Use defaults if storage is unavailable or corrupted.
+  }
+
+  return result;
+};
+
+/* ---------------------------------------------------------
+   Uploaded images storage — IndexedDB
+   --------------------------------------------------------- */
+
+const DB_NAME = "work-uploads-db";
+const STORE_NAME = "images";
+
+interface StoredUpload {
+  id: string;
+  category: string;
+  blob: Blob;
+  createdAt: number;
+  backendId?: number;
+}
+
+const openDB = (): Promise<IDBDatabase> =>
+  new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(STORE_NAME, {
+        keyPath: "id",
+      });
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+
+const dbGetAll = async (): Promise<StoredUpload[]> => {
+  const db = await openDB();
+
+  return new Promise((resolve, reject) => {
+    const request = db
+      .transaction(STORE_NAME, "readonly")
+      .objectStore(STORE_NAME)
+      .getAll();
+
+    request.onsuccess = () =>
+      resolve(request.result as StoredUpload[]);
+
+    request.onerror = () => reject(request.error);
+  });
+};
+
+const dbPut = async (item: StoredUpload): Promise<void> => {
+  const db = await openDB();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+
+    tx.objectStore(STORE_NAME).put(item);
+
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+};
+
+const dbDelete = async (id: string): Promise<void> => {
+  const db = await openDB();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+
+    tx.objectStore(STORE_NAME).delete(id);
+
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+};
 
 interface BackButtonProps {
   onClick: () => void;
@@ -131,6 +331,73 @@ function BackButton({
   );
 }
 
+/* ---------------------------------------------------------
+   Reusable confirmation popup (uses the existing delete
+   popup styles, so no new CSS is needed)
+   --------------------------------------------------------- */
+
+interface ConfirmDialogProps {
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  busyLabel?: string;
+  busy: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function ConfirmDialog({
+  title,
+  message,
+  confirmLabel = "Confirm",
+  busyLabel = "Please wait...",
+  busy,
+  onConfirm,
+  onCancel,
+}: ConfirmDialogProps) {
+  return (
+    <div
+      className="wg-delete-backdrop"
+      onClick={() => {
+        if (!busy) onCancel();
+      }}
+      role="presentation"
+    >
+      <div
+        className="wg-delete-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wg-confirm-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h2 id="wg-confirm-title">{title}</h2>
+
+        <p>{message}</p>
+
+        <div className="wg-delete-actions">
+          <button
+            type="button"
+            className="wg-delete-cancel"
+            onClick={onCancel}
+            disabled={busy}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            className="wg-delete-submit"
+            onClick={onConfirm}
+            disabled={busy}
+          >
+            {busy ? busyLabel : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Work({ onBackToHome }: WorkProps) {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<Tattoo | null>(null);
@@ -138,37 +405,247 @@ function Work({ onBackToHome }: WorkProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
+  // View-all / reorder state
+  const [showAll, setShowAll] = useState(false);
+  const [orders, setOrders] = useState<IdMap>(loadOrders);
+  const [hidden, setHidden] = useState<IdMap>(loadHidden);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+
+  // Unsaved reorder (draft) + its confirmation popup
+  const [draftOrder, setDraftOrder] = useState<string[] | null>(null);
+  const [showReorderConfirm, setShowReorderConfirm] = useState(false);
+  const [isSavingReorder, setIsSavingReorder] = useState(false);
+
+  // Delete confirmation popup
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(
+    null
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Upload state + confirmation popup
+  const [uploads, setUploads] = useState<UploadedImage[]>([]);
+  const [pendingUpload, setPendingUpload] = useState<{
+    files: File[];
+    category: string;
+  } | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadsRef = useRef<UploadedImage[]>([]);
+
+  uploadsRef.current = uploads;
+
   const dragStartX = useRef(0);
   const dragDistance = useRef(0);
   const draggedRef = useRef(false);
   const selectedImageRef = useRef<Tattoo | null>(null);
   const closeTimerRef = useRef<number | null>(null);
 
-  const filteredTattoos = activeCategory
-    ? tattoos.filter((tattoo) => tattoo.category === activeCategory)
-    : [];
+  // Load previously uploaded images from IndexedDB.
+  useEffect(() => {
+    let cancelled = false;
 
-  const backgroundImage =
+    (async () => {
+      try {
+        const stored = await dbGetAll();
+
+        if (cancelled) return;
+
+        stored.sort((a, b) => a.createdAt - b.createdAt);
+
+        setUploads(
+          stored.map((item) => ({
+            id: item.id,
+            category: item.category,
+            src: URL.createObjectURL(item.blob),
+            backendId: item.backendId,
+          }))
+        );
+      } catch {
+        // Storage unavailable — uploads won't persist.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Free object URLs when leaving the page.
+  useEffect(() => {
+    return () => {
+      uploadsRef.current.forEach((item) => {
+        URL.revokeObjectURL(item.src);
+      });
+    };
+  }, []);
+
+  const hiddenIds = useMemo(
+    () => (activeCategory ? hidden[activeCategory] ?? [] : []),
+    [activeCategory, hidden]
+  );
+
+  // Every visible image in the open category.
+  const itemsById = useMemo(() => {
+    const map = new Map<string, Tattoo>();
+
+    if (!activeCategory) return map;
+
+    (baseByCategory[activeCategory] ?? []).forEach((item) => {
+      if (!hiddenIds.includes(item.id)) {
+        map.set(item.id, item);
+      }
+    });
+
+    uploads
+      .filter((item) => item.category === activeCategory)
+      .forEach((item) => {
+        map.set(item.id, {
+          id: item.id,
+          image: item.src,
+          category: activeCategory,
+          uploaded: true,
+        });
+      });
+
+    return map;
+  }, [activeCategory, hiddenIds, uploads]);
+
+  // Saved order first; new images go at the end.
+  const displayIds = useMemo(() => {
+    if (!activeCategory) return [];
+
+    const seen = new Set<string>();
+    const ids: string[] = [];
+
+    (orders[activeCategory] ?? []).forEach((id) => {
+      if (itemsById.has(id) && !seen.has(id)) {
+        seen.add(id);
+        ids.push(id);
+      }
+    });
+
+    itemsById.forEach((_, id) => {
+      if (!seen.has(id)) ids.push(id);
+    });
+
+    return ids;
+  }, [activeCategory, orders, itemsById]);
+
+  const filteredTattoos: Tattoo[] = useMemo(
+    () => displayIds.map((id) => itemsById.get(id)!),
+    [displayIds, itemsById]
+  );
+
+  // Order shown in the "View all" grid — the unsaved draft if there is one.
+  const gridIds = useMemo(() => {
+    if (!draftOrder) return displayIds;
+
+    const seen = new Set<string>();
+    const ids: string[] = [];
+
+    draftOrder.forEach((id) => {
+      if (itemsById.has(id) && !seen.has(id)) {
+        seen.add(id);
+        ids.push(id);
+      }
+    });
+
+    displayIds.forEach((id) => {
+      if (!seen.has(id)) ids.push(id);
+    });
+
+    return ids;
+  }, [draftOrder, displayIds, itemsById]);
+
+  const gridTattoos: Tattoo[] = useMemo(
+    () => gridIds.map((id) => itemsById.get(id)!),
+    [gridIds, itemsById]
+  );
+
+  const hasUnsavedOrder = useMemo(
+    () =>
+      draftOrder !== null &&
+      (gridIds.length !== displayIds.length ||
+        gridIds.some((id, i) => id !== displayIds[i])),
+    [draftOrder, gridIds, displayIds]
+  );
+
+  const backgroundImage: Tattoo =
     selectedImage ??
     filteredTattoos[activeIndex] ??
     filteredTattoos[0] ?? {
+      id: "background",
       image: cubeBackground,
       category: "Background",
+      uploaded: false,
     };
 
   useEffect(() => {
     selectedImageRef.current = selectedImage;
   }, [selectedImage]);
 
-  // Preload and pre-decode only the opened category.
+  // Persist the custom order.
+  useEffect(() => {
+    try {
+      localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(orders));
+    } catch {
+      // Storage unavailable.
+    }
+  }, [orders]);
+
+  // Persist deleted built-in images.
+  useEffect(() => {
+    try {
+      localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(hidden));
+    } catch {
+      // Storage unavailable.
+    }
+  }, [hidden]);
+
+  // Close any confirmation popup with Escape.
+  useEffect(() => {
+    if (!pendingDeleteId && !pendingUpload && !showReorderConfirm) return;
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+
+      if (pendingDeleteId && !isDeleting) setPendingDeleteId(null);
+      if (pendingUpload && !isUploading) setPendingUpload(null);
+      if (showReorderConfirm && !isSavingReorder) {
+        setShowReorderConfirm(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+
+    return () => window.removeEventListener("keydown", onKey);
+  }, [
+    pendingDeleteId,
+    pendingUpload,
+    showReorderConfirm,
+    isDeleting,
+    isUploading,
+    isSavingReorder,
+  ]);
+
+  // Keep the active slide valid when images are deleted.
+  useEffect(() => {
+    if (filteredTattoos.length > 0 && activeIndex >= filteredTattoos.length) {
+      setActiveIndex(filteredTattoos.length - 1);
+    }
+  }, [filteredTattoos.length, activeIndex]);
+
+  // Preload and pre-decode the opened category.
   useEffect(() => {
     filteredTattoos.forEach((tattoo) => {
       const image = new Image();
       image.src = tattoo.image;
       image.decode?.().catch(() => {});
     });
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory]);
+  }, [activeCategory, filteredTattoos.length]);
 
   useEffect(() => {
     return () => {
@@ -178,12 +655,13 @@ function Work({ onBackToHome }: WorkProps) {
     };
   }, []);
 
-  // Automatically rotate the selected category's carousel.
+  // Automatically rotate the carousel.
   useEffect(() => {
     if (
       !activeCategory ||
       isDragging ||
       selectedImage ||
+      showAll ||
       filteredTattoos.length < 2
     ) {
       return;
@@ -198,6 +676,7 @@ function Work({ onBackToHome }: WorkProps) {
     activeCategory,
     isDragging,
     selectedImage,
+    showAll,
     filteredTattoos.length,
   ]);
 
@@ -210,6 +689,11 @@ function Work({ onBackToHome }: WorkProps) {
     selectedImageRef.current = null;
     setSelectedImage(null);
     setIsClosing(false);
+    setShowAll(false);
+    setPendingDeleteId(null);
+    setPendingUpload(null);
+    setDraftOrder(null);
+    setShowReorderConfirm(false);
     setActiveIndex(0);
     setActiveCategory(category);
   };
@@ -223,6 +707,11 @@ function Work({ onBackToHome }: WorkProps) {
     selectedImageRef.current = null;
     setSelectedImage(null);
     setIsClosing(false);
+    setShowAll(false);
+    setPendingDeleteId(null);
+    setPendingUpload(null);
+    setDraftOrder(null);
+    setShowReorderConfirm(false);
     setActiveCategory(null);
     setActiveIndex(0);
   };
@@ -261,7 +750,7 @@ function Work({ onBackToHome }: WorkProps) {
     if (!current || filteredTattoos.length === 0) return;
 
     const index = filteredTattoos.findIndex(
-      (tattoo) => tattoo.image === current.image
+      (tattoo) => tattoo.id === current.id
     );
 
     if (index < 0) return;
@@ -314,6 +803,377 @@ function Work({ onBackToHome }: WorkProps) {
     );
   };
 
+  /* ---------- Reorder ---------- */
+
+  // Moving images only changes the local draft. Nothing is sent to the
+  // backend until the user confirms in the popup.
+  const moveImage = (from: number, to: number) => {
+    if (
+      !activeCategory ||
+      from === to ||
+      to < 0 ||
+      to >= gridIds.length
+    ) {
+      return;
+    }
+
+    const next = [...gridIds];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+
+    setDraftOrder(next);
+  };
+
+  // Back to the default order (still a draft until confirmed).
+  const resetOrder = () => {
+    if (!activeCategory) return;
+
+    setDraftOrder(Array.from(itemsById.keys()));
+  };
+
+  const discardOrderChanges = () => {
+    setDraftOrder(null);
+    setShowReorderConfirm(false);
+  };
+
+  const askSaveOrder = () => {
+    if (!hasUnsavedOrder || isSavingReorder) return;
+    setShowReorderConfirm(true);
+  };
+
+  const cancelSaveOrder = () => {
+    if (isSavingReorder) return;
+    setShowReorderConfirm(false);
+  };
+
+  // Closing "View all" with unsaved changes asks for confirmation first.
+  const requestCloseAll = () => {
+    setPendingDeleteId(null);
+
+    if (hasUnsavedOrder) {
+      setShowReorderConfirm(true);
+      return;
+    }
+
+    setDraftOrder(null);
+    setShowAll(false);
+  };
+
+  // Confirm → call PUT /api/tattoos/reorder.
+  const confirmSaveOrder = async () => {
+    if (!activeCategory || isSavingReorder) return;
+
+    const category = activeCategory;
+    const newIds = [...gridIds];
+
+    // Only uploaded images exist in the database, so only they have IDs.
+    const orderedBackendIds = newIds
+      .map((id) => uploads.find((upload) => upload.id === id)?.backendId)
+      .filter((id): id is number => id !== undefined);
+
+    setIsSavingReorder(true);
+
+    try {
+      if (orderedBackendIds.length > 0) {
+        const response = await fetch(`${API_URL}/reorder`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderedBackendIds),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => "");
+
+          throw new Error(
+            errorText || `Server returned status ${response.status}`
+          );
+        }
+      }
+
+      // Backend accepted it (or there was nothing to send) — commit locally.
+      setOrders((prev) => ({
+        ...prev,
+        [category]: newIds,
+      }));
+
+      setDraftOrder(null);
+      setShowReorderConfirm(false);
+    } catch (error) {
+      console.error("Reorder failed:", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred.";
+
+      window.alert(
+        `The new order could not be saved to the backend.\n\n${message}\n\nYour changes are still here — you can try again.`
+      );
+    } finally {
+      setIsSavingReorder(false);
+    }
+  };
+
+  /* ---------- Upload ---------- */
+
+  const openFilePicker = () => fileInputRef.current?.click();
+
+  // Choosing files only opens the confirmation popup.
+  const handleFiles = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []).filter((file) =>
+      file.type.startsWith("image/")
+    );
+
+    // Allow selecting the same file again.
+    event.target.value = "";
+
+    if (files.length === 0 || !activeCategory) return;
+
+    setPendingUpload({ files, category: activeCategory });
+  };
+
+  const cancelUpload = () => {
+    if (isUploading) return;
+    setPendingUpload(null);
+  };
+
+  // Confirm → call POST /api/tattoos/upload for each selected file.
+  const confirmUpload = async () => {
+    if (!pendingUpload || isUploading) return;
+
+    const { files, category } = pendingUpload;
+    const added: UploadedImage[] = [];
+
+    setIsUploading(true);
+
+    for (const file of files) {
+      try {
+        // Upload the file to Spring Boot first so it receives a database ID.
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("name", file.name);
+        formData.append("description", category);
+
+        const response = await fetch(`${API_URL}/upload`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => "");
+          throw new Error(
+            errorText || `Upload failed (${response.status})`
+          );
+        }
+
+        const result: { id?: number | string } = await response.json();
+
+        if (result.id === undefined || result.id === null) {
+          throw new Error(
+            "The upload API did not return an image ID. Check the response from POST /api/tattoos/upload."
+          );
+        }
+
+        const backendId = Number(result.id);
+
+        if (!Number.isFinite(backendId)) {
+          throw new Error("The backend returned an invalid image ID.");
+        }
+
+        const id = `up-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 8)}`;
+
+        const src = URL.createObjectURL(file);
+
+        const uploadedImage: UploadedImage = {
+          id,
+          category,
+          src,
+          backendId,
+        };
+
+        try {
+          await dbPut({
+            id,
+            category,
+            blob: file,
+            createdAt: Date.now(),
+            backendId,
+          });
+        } catch {
+          // It remains visible for this session if IndexedDB is unavailable.
+        }
+
+        added.push(uploadedImage);
+      } catch (error) {
+        console.error("Tattoo upload failed:", error);
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred.";
+
+        window.alert(
+          `Could not upload "${file.name}" to the backend.\n\n${message}`
+        );
+      }
+    }
+
+    if (added.length > 0) {
+      setUploads((prev) => [...prev, ...added]);
+    }
+
+    setIsUploading(false);
+    setPendingUpload(null);
+  };
+
+  /* ---------- Delete ---------- */
+
+  // Clicking the delete icon only opens the confirmation popup.
+  const askDelete = (id: string) => {
+    if (isDeleting) return;
+    setPendingDeleteId(id);
+  };
+
+  const cancelDelete = () => {
+    if (isDeleting) return;
+    setPendingDeleteId(null);
+  };
+
+  // Submit the confirmation popup to delete the image.
+  const deleteItem = async (id: string) => {
+    const item = itemsById.get(id);
+
+    if (!item || !activeCategory || isDeleting) return;
+
+    const category = activeCategory;
+
+    if (item.uploaded) {
+      const uploadedItem = uploads.find((upload) => upload.id === id);
+
+      if (!uploadedItem) {
+        window.alert("Could not find this uploaded image.");
+        return;
+      }
+
+      /*
+       * Only call the backend when this image has a saved backend ID.
+       * Older uploads created before backend integration may not have one.
+       */
+      if (uploadedItem.backendId !== undefined) {
+        setIsDeleting(true);
+
+        try {
+          const response = await fetch(
+            `${API_URL}/${uploadedItem.backendId}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text().catch(() => "");
+
+            throw new Error(
+              errorText ||
+                `Server returned status ${response.status}`
+            );
+          }
+        } catch (error) {
+          console.error("Backend tattoo deletion failed:", error);
+
+          const message =
+            error instanceof Error
+              ? error.message
+              : "An unknown error occurred.";
+
+          window.alert(
+            `The image could not be deleted from the backend.\n\n${message}\n\nThe image has been kept in your gallery.`
+          );
+
+          return;
+        } finally {
+          setIsDeleting(false);
+        }
+      }
+
+      /*
+       * Remove the local image only after the backend delete succeeds.
+       * If it is an older local-only upload without a backend ID,
+       * remove it from this browser as before.
+       */
+      try {
+        await dbDelete(id);
+      } catch (error) {
+        console.error("Could not delete the local IndexedDB record:", error);
+      }
+
+      URL.revokeObjectURL(uploadedItem.src);
+
+      setUploads((prev) => prev.filter((upload) => upload.id !== id));
+
+      if (selectedImageRef.current?.id === id) {
+        selectedImageRef.current = null;
+        setSelectedImage(null);
+        setIsClosing(false);
+      }
+    } else {
+      // Built-in image: preserve the existing browser-only hide behaviour.
+      setHidden((prev) => {
+        const list = prev[category] ?? [];
+
+        if (list.includes(id)) return prev;
+
+        return {
+          ...prev,
+          [category]: [...list, id],
+        };
+      });
+
+      if (selectedImageRef.current?.id === id) {
+        selectedImageRef.current = null;
+        setSelectedImage(null);
+        setIsClosing(false);
+      }
+    }
+
+    setOrders((prev) => {
+      const list = prev[category];
+
+      if (!list) return prev;
+
+      return {
+        ...prev,
+        [category]: list.filter((itemId) => itemId !== id),
+      };
+    });
+
+    setDraftOrder((prev) =>
+      prev ? prev.filter((itemId) => itemId !== id) : prev
+    );
+  };
+
+  const confirmDelete = async () => {
+    const id = pendingDeleteId;
+
+    if (!id || isDeleting) return;
+
+    await deleteItem(id);
+
+    setPendingDeleteId(null);
+  };
+
+  const restoreDeleted = () => {
+    if (!activeCategory) return;
+
+    setHidden((prev) => {
+      const copy = { ...prev };
+      delete copy[activeCategory];
+      return copy;
+    });
+  };
+
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
 
@@ -335,7 +1195,7 @@ function Work({ onBackToHome }: WorkProps) {
       try {
         event.currentTarget.setPointerCapture(event.pointerId);
       } catch {
-        // Pointer capture isn't available in every browser.
+        // Pointer capture may not be available.
       }
     }
   };
@@ -370,6 +1230,7 @@ function Work({ onBackToHome }: WorkProps) {
 
   const getCardPosition = (index: number) => {
     const total = filteredTattoos.length;
+
     if (!total) return 0;
 
     let offset = index - activeIndex;
@@ -384,7 +1245,10 @@ function Work({ onBackToHome }: WorkProps) {
     <section className="wg-page">
       {/* Background follows the current artwork. */}
       {backgroundImage && (
-        <div className="wg-page-background-container" aria-hidden="true">
+        <div
+          className="wg-page-background-container"
+          aria-hidden="true"
+        >
           <img
             key={backgroundImage.image}
             src={backgroundImage.image}
@@ -396,13 +1260,234 @@ function Work({ onBackToHome }: WorkProps) {
         </div>
       )}
 
-      <div className="wg-page-background-shade" aria-hidden="true" />
-
-      {/* BACK BUTTON — rendered once, outside the perspective carousel */}
-      <BackButton
-        onClick={activeCategory ? backToCategories : onBackToHome}
-        label={activeCategory ? "Back to categories" : "Back to home"}
+      <div
+        className="wg-page-background-shade"
+        aria-hidden="true"
       />
+
+      {/* BACK BUTTON */}
+      <BackButton
+        onClick={
+          showAll
+            ? requestCloseAll
+            : activeCategory
+              ? backToCategories
+              : onBackToHome
+        }
+        label={
+          showAll
+            ? "Close all images"
+            : activeCategory
+              ? "Back to categories"
+              : "Back to home"
+        }
+      />
+
+      {/* UPLOAD + VIEW ALL BUTTONS */}
+      {activeCategory && !selectedImage && (
+        <div className="wg-actions">
+          <button
+            type="button"
+            className="wg-upload-btn"
+            onClick={openFilePicker}
+          >
+            Upload
+          </button>
+
+          {(filteredTattoos.length > 0 || hiddenIds.length > 0) && (
+            <button
+              type="button"
+              className="wg-viewall"
+              onClick={() => {
+                if (showAll) {
+                  requestCloseAll();
+                } else {
+                  setPendingDeleteId(null);
+                  setShowAll(true);
+                }
+              }}
+            >
+              {showAll ? "Done" : "View all"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Hidden file picker */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={handleFiles}
+      />
+
+      {/* VIEW ALL + REORDER GRID */}
+      {activeCategory && showAll && (
+        <div className="wg-all-view">
+          <div className="wg-all-toolbar">
+            <p>
+              Drag images to reorder · click an image to open it in the gallery
+              · tap the delete icon to remove an image
+            </p>
+
+            <div className="wg-all-toolbar-actions">
+              {hasUnsavedOrder && (
+                <>
+                  <button
+                    type="button"
+                    className="wg-all-reset"
+                    onClick={askSaveOrder}
+                  >
+                    Save order
+                  </button>
+
+                  <button
+                    type="button"
+                    className="wg-all-reset"
+                    onClick={discardOrderChanges}
+                  >
+                    Discard changes
+                  </button>
+                </>
+              )}
+
+              {hiddenIds.length > 0 && (
+                <button
+                  type="button"
+                  className="wg-all-reset"
+                  onClick={restoreDeleted}
+                >
+                  Restore deleted
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="wg-all-reset"
+                onClick={resetOrder}
+              >
+                Reset order
+              </button>
+            </div>
+          </div>
+
+          <div className="wg-all-grid">
+            {gridTattoos.length === 0 && (
+              <p className="wg-all-empty">
+                No images. Upload some, or restore deleted ones.
+              </p>
+            )}
+
+            {gridTattoos.map((tattoo, index) => (
+              <div
+                key={tattoo.id}
+                className={`wg-all-item ${
+                  dragIndex === index ? "is-dragging" : ""
+                } ${
+                  overIndex === index && dragIndex !== index
+                    ? "is-over"
+                    : ""
+                }`}
+                draggable
+                onDragStart={(event) => {
+                  setDragIndex(index);
+                  event.dataTransfer.effectAllowed = "move";
+                  event.dataTransfer.setData(
+                    "text/plain",
+                    String(index)
+                  );
+                }}
+                onDragOver={(event) => {
+                  event.preventDefault();
+
+                  if (overIndex !== index) {
+                    setOverIndex(index);
+                  }
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+
+                  if (dragIndex !== null) {
+                    moveImage(dragIndex, index);
+                  }
+
+                  setDragIndex(null);
+                  setOverIndex(null);
+                }}
+                onDragEnd={() => {
+                  setDragIndex(null);
+                  setOverIndex(null);
+                }}
+                onClick={() => {
+                  // Grid order may be an unsaved draft, so look the
+                  // image up by id in the saved carousel order.
+                  const carouselIndex = filteredTattoos.findIndex(
+                    (item) => item.id === tattoo.id
+                  );
+
+                  setActiveIndex(carouselIndex >= 0 ? carouselIndex : 0);
+                  setShowAll(false);
+                  setDraftOrder(null);
+                }}
+              >
+                <img
+                  src={tattoo.image}
+                  alt={`${tattoo.category} artwork ${index + 1}`}
+                  draggable={false}
+                  decoding="async"
+                />
+
+                <span className="wg-all-number">{index + 1}</span>
+
+                <button
+                  type="button"
+                  className="wg-all-remove"
+                  aria-label="Delete image"
+                  title="Delete"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    askDelete(tattoo.id);
+                  }}
+                >
+                  <img
+                    src={deleteIcon}
+                    alt=""
+                    draggable={false}
+                  />
+                </button>
+
+                <span className="wg-all-move">
+                  <button
+                    type="button"
+                    aria-label="Move earlier"
+                    disabled={index === 0}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      moveImage(index, index - 1);
+                    }}
+                  >
+                    ‹
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-label="Move later"
+                    disabled={index === gridTattoos.length - 1}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      moveImage(index, index + 1);
+                    }}
+                  >
+                    ›
+                  </button>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* FIRST SCREEN: FOUR CATEGORY CARDS */}
       {!activeCategory ? (
@@ -421,7 +1506,6 @@ function Work({ onBackToHome }: WorkProps) {
                 className={`wg-category-card wg-category-card-${index + 1}`}
                 onClick={() => openCategory(category.title)}
               >
-
                 <img
                   src={category.images[0]}
                   alt={category.title}
@@ -433,9 +1517,10 @@ function Work({ onBackToHome }: WorkProps) {
 
                 <span className="wg-category-content">
                   <strong>{category.title}</strong>
-                  <span className="wg-category-subtitle"></span>
-
-                  <span className="wg-category-explore">EXPLORE WORK</span>
+                  <span className="wg-category-subtitle" />
+                  <span className="wg-category-explore">
+                    EXPLORE WORK
+                  </span>
                 </span>
               </button>
             ))}
@@ -465,9 +1550,11 @@ function Work({ onBackToHome }: WorkProps) {
 
                 return (
                   <article
-                    className={`wg-slide ${offset === 0 ? "is-active" : ""}`}
+                    className={`wg-slide ${
+                      offset === 0 ? "is-active" : ""
+                    }`}
                     data-position={position}
-                    key={tattoo.image}
+                    key={tattoo.id}
                     aria-hidden={!visible}
                     style={{
                       zIndex: 10 - Math.abs(offset),
@@ -488,7 +1575,9 @@ function Work({ onBackToHome }: WorkProps) {
 
                         openLightbox(tattoo);
                       }}
-                      aria-label={`View ${tattoo.category} artwork ${index + 1}`}
+                      aria-label={`View ${tattoo.category} artwork ${
+                        index + 1
+                      }`}
                     >
                       <img
                         src={tattoo.image}
@@ -551,7 +1640,7 @@ function Work({ onBackToHome }: WorkProps) {
           </button>
 
           <img
-            key={`foreground-${selectedImage.image}`}
+            key={`foreground-${selectedImage.id}`}
             src={selectedImage.image}
             alt={`${selectedImage.category} tattoo`}
             className="wg-lightbox-img"
@@ -587,6 +1676,79 @@ function Work({ onBackToHome }: WorkProps) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* DELETE CONFIRMATION POPUP */}
+      {pendingDeleteId && (
+        <div
+          className="wg-delete-backdrop"
+          onClick={cancelDelete}
+          role="presentation"
+        >
+          <div
+            className="wg-delete-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="wg-delete-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="wg-delete-title">
+              Are you sure you want to delete?
+            </h2>
+
+            <p>This image will be removed from your gallery.</p>
+
+            <div className="wg-delete-actions">
+              <button
+                type="button"
+                className="wg-delete-cancel"
+                onClick={cancelDelete}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="wg-delete-submit"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting..." : "Submit"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPLOAD CONFIRMATION POPUP */}
+      {pendingUpload && (
+        <ConfirmDialog
+          title="Upload to your gallery?"
+          message={
+            pendingUpload.files.length === 1
+              ? `"${pendingUpload.files[0].name}" will be uploaded to ${pendingUpload.category}.`
+              : `${pendingUpload.files.length} images will be uploaded to ${pendingUpload.category}.`
+          }
+          confirmLabel="Confirm"
+          busyLabel="Uploading..."
+          busy={isUploading}
+          onConfirm={confirmUpload}
+          onCancel={cancelUpload}
+        />
+      )}
+
+      {/* REORDER CONFIRMATION POPUP */}
+      {showReorderConfirm && (
+        <ConfirmDialog
+          title="Save the new order?"
+          message="The new image order will be saved."
+          confirmLabel="Confirm"
+          busyLabel="Saving..."
+          busy={isSavingReorder}
+          onConfirm={confirmSaveOrder}
+          onCancel={cancelSaveOrder}
+        />
       )}
     </section>
   );

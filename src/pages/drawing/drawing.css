@@ -1,5 +1,5 @@
 /* ==========================================
-   DRAWINGS — 3D ASSEMBLY GALLERY
+   DRAWINGS — TWO-ROW MARQUEE + VIEW ALL GRID
    ========================================== */
 
 .drawings-page {
@@ -8,12 +8,16 @@
   --draw-muted: #a7a19a;
   --draw-header: 83px; /* height of the AKHIL DAS header bar */
 
+  /* marquee sizing */
+  --card-w: clamp(150px, 19vw, 280px);
+  --card-gap: 16px;
+
   position: relative;
   isolation: isolate;
   min-height: 100vh;
   width: 100%;
   box-sizing: border-box;
-  padding: 36px 6% 24px;
+  padding: 36px 0 24px;
   overflow: hidden;
 
   color: var(--draw-white);
@@ -21,12 +25,12 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Ambient cinematic background */
+/* Ambient background (static: no animation, to keep things smooth) */
 
 .drawings-background {
   position: absolute;
   z-index: -2;
-  inset: -10%;
+  inset: 0;
   pointer-events: none;
 
   background:
@@ -41,8 +45,6 @@
       transparent 38%
     ),
     #080808;
-
-  animation: ambientDrift 10s ease-in-out infinite alternate;
 }
 
 .drawings-grain {
@@ -61,7 +63,7 @@
 }
 
 /* ==========================================
-   BACK ARROW — top-left corner of the page
+   BACK ARROW
    ========================================== */
 
 .drawings-page .drawings-back-btn {
@@ -103,6 +105,65 @@
 }
 
 /* ==========================================
+   TOP-RIGHT ACTIONS (Upload / View all / Reorder / Cancel / Save)
+   ========================================== */
+
+.drawings-page .drawings-actions {
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  z-index: 50;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drawings-page .drawings-upload-btn,
+.drawings-page .drawings-reorder-btn,
+.drawings-page .drawings-save-btn {
+  height: 34px;
+  padding: 0 16px;
+
+  border: 1px solid rgba(215, 173, 105, 0.55);
+  border-radius: 17px;
+
+  background: rgba(12, 11, 9, 0.85);
+  color: #e8e1d6;
+
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+
+  transition:
+    color 250ms ease,
+    border-color 250ms ease,
+    background 250ms ease;
+}
+
+.drawings-page .drawings-upload-btn:hover,
+.drawings-page .drawings-reorder-btn:hover {
+  color: var(--draw-gold);
+  border-color: var(--draw-gold);
+  background: #17130e;
+}
+
+/* Save button: gold so it stands out */
+.drawings-page .drawings-save-btn {
+  background: var(--draw-gold);
+  border-color: var(--draw-gold);
+  color: #14100a;
+  font-weight: 700;
+}
+
+.drawings-page .drawings-save-btn:hover {
+  background: #e6c488;
+  border-color: #e6c488;
+}
+
+/* ==========================================
    HEADER
    ========================================== */
 
@@ -110,18 +171,10 @@
   position: relative;
   z-index: 2;
   text-align: center;
-  margin: 0 auto 38px;
+  margin: 0 auto 42px;
+  padding: 0 6%;
 
   animation: headerReveal 900ms ease both;
-}
-
-.drawings-eyebrow {
-  margin: 0 0 10px;
-
-  color: var(--draw-gold);
-  font-size: 10px;
-  letter-spacing: 5px;
-  font-weight: 600;
 }
 
 .drawings-header h1 {
@@ -137,270 +190,124 @@
   color: var(--draw-gold);
 }
 
-.drawings-subtitle {
-  margin: 12px 0 18px;
-
-  color: var(--draw-muted);
-  font-size: 12px;
-  letter-spacing: 1.5px;
-}
-
-.drawings-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.drawings-divider span {
-  width: 40px;
-  height: 1px;
-  background: rgba(215, 173, 105, 0.5);
-}
-
-.drawings-divider i {
-  width: 6px;
-  height: 6px;
-  background: var(--draw-gold);
-  transform: rotate(45deg);
-}
-
 /* ==========================================
-   GALLERY GRID
+   MARQUEE (two rows, opposite directions)
    ========================================== */
 
-.drawings-gallery {
+.drawings-marquee {
   position: relative;
   z-index: 1;
 
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 19px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--card-gap);
 
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-
-  perspective: 1200px;
-  transform-style: preserve-3d;
 }
 
-/* Individual image cards */
-
-.drawing-card {
-  --sx: 0vw;
-  --sy: -35vh;
-  --sz: -450px;
-  --rx: 30deg;
-  --ry: -30deg;
-  --rz: 20deg;
-
+.marquee-row {
   position: relative;
-  display: block;
   width: 100%;
-  min-width: 0;
-  aspect-ratio: 4 / 5;
-
-  padding: 0;
   overflow: hidden;
-  isolation: isolate;
 
+  /* soft fade on left and right edges */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 6%,
+    #000 94%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 6%,
+    #000 94%,
+    transparent 100%
+  );
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+
+  /* GPU-only animation: just transform, nothing else */
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+
+  animation: marqueeLeft var(--duration, 60s) linear infinite;
+}
+
+/* second row travels the opposite way */
+.marquee-track.is-reverse {
+  animation-name: marqueeRight;
+}
+
+/* pause the row you are hovering */
+.marquee-row:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* The track holds two identical halves; moving by -50% loops seamlessly.
+   Cards use margin-right (not flex gap) so that -50% is exact. */
+
+@keyframes marqueeLeft {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+@keyframes marqueeRight {
+  from { transform: translate3d(-50%, 0, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+
+.marquee-card {
+  position: relative;
+  flex: 0 0 auto;
+
+  width: var(--card-w);
+  aspect-ratio: 4 / 5;
+  margin-right: var(--card-gap);
+
+  overflow: hidden;
   background: #121212;
   border: 1px solid rgba(215, 173, 105, 0.17);
   border-radius: 2px;
 
-  cursor: pointer;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-
-  animation:
-    drawingAssemble 5.5s
-    cubic-bezier(0.16, 0.78, 0.24, 1)
-    both;
-
-  animation-delay: calc(var(--index) * 100ms);
-
-  transition:
-    border-color 350ms ease,
-    box-shadow 350ms ease;
+  transition: border-color 300ms ease;
 }
 
-/* Scattered entrance positions */
-
-.drawing-card:nth-child(1) {
-  --sx: -36vw;
-  --sy: -35vh;
-  --sz: -500px;
-  --rx: 45deg;
-  --ry: 35deg;
-  --rz: -24deg;
-}
-
-.drawing-card:nth-child(2) {
-  --sx: 8vw;
-  --sy: -43vh;
-  --sz: -300px;
-  --rx: -35deg;
-  --ry: -45deg;
-  --rz: 22deg;
-}
-
-.drawing-card:nth-child(3) {
-  --sx: 39vw;
-  --sy: -28vh;
-  --sz: -550px;
-  --rx: 55deg;
-  --ry: -35deg;
-  --rz: -18deg;
-}
-
-.drawing-card:nth-child(4) {
-  --sx: 32vw;
-  --sy: 4vh;
-  --sz: -250px;
-  --rx: -40deg;
-  --ry: 50deg;
-  --rz: 25deg;
-}
-
-.drawing-card:nth-child(5) {
-  --sx: -34vw;
-  --sy: 28vh;
-  --sz: -400px;
-  --rx: 40deg;
-  --ry: 40deg;
-  --rz: -28deg;
-}
-
-.drawing-card:nth-child(6) {
-  --sx: 12vw;
-  --sy: 40vh;
-  --sz: -600px;
-  --rx: -50deg;
-  --ry: -30deg;
-  --rz: 18deg;
-}
-
-.drawing-card:nth-child(7) {
-  --sx: 42vw;
-  --sy: 30vh;
-  --sz: -350px;
-  --rx: 35deg;
-  --ry: -45deg;
-  --rz: -22deg;
-}
-
-.drawing-card:nth-child(8) {
-  --sx: -42vw;
-  --sy: -8vh;
-  --sz: -200px;
-  --rx: -35deg;
-  --ry: 45deg;
-  --rz: 30deg;
-}
-
-.drawing-card:nth-child(9) {
-  --sx: 28vw;
-  --sy: -38vh;
-  --sz: -500px;
-  --rx: 50deg;
-  --ry: 30deg;
-  --rz: -30deg;
-}
-
-.drawing-card:nth-child(10) {
-  --sx: -18vw;
-  --sy: 35vh;
-  --sz: -300px;
-  --rx: -45deg;
-  --ry: -40deg;
-  --rz: 20deg;
-}
-
-.drawing-card:nth-child(11) {
-  --sx: 45vw;
-  --sy: -12vh;
-  --sz: -450px;
-  --rx: 35deg;
-  --ry: 50deg;
-  --rz: -25deg;
-}
-
-.drawing-card:nth-child(12) {
-  --sx: -38vw;
-  --sy: 40vh;
-  --sz: -550px;
-  --rx: -50deg;
-  --ry: 35deg;
-  --rz: 28deg;
-}
-
-/* The images move from their scattered positions
-   into their natural grid positions. */
-
-@keyframes drawingAssemble {
-  0% {
-    opacity: 0;
-    transform:
-      translate3d(var(--sx), var(--sy), var(--sz))
-      rotateX(var(--rx))
-      rotateY(var(--ry))
-      rotateZ(var(--rz))
-      scale(0.4);
-    filter: blur(5px);
-  }
-
-  35% {
-    opacity: 1;
-    filter: blur(0);
-    transform:
-      translate3d(
-        calc(var(--sx) * 0.45),
-        calc(var(--sy) * 0.45),
-        -180px
-      )
-      rotateX(calc(var(--rx) * 0.5))
-      rotateY(calc(var(--ry) * 0.5))
-      rotateZ(calc(var(--rz) * 0.5))
-      scale(0.75);
-  }
-
-  48% {
-    opacity: 1;
-    transform:
-      translate3d(0, 0, 0)
-      rotateX(0)
-      rotateY(0)
-      rotateZ(0)
-      scale(0.92);
-  }
-
-  76% {
-    opacity: 1;
-    transform:
-      translate3d(0, 0, 35px)
-      rotateX(2deg)
-      rotateY(-3deg)
-      rotateZ(1deg)
-      scale(1.025);
-  }
-
-  100% {
-    opacity: 1;
-    transform:
-      translate3d(0, 0, 0)
-      rotateX(0)
-      rotateY(0)
-      rotateZ(0)
-      scale(1);
-    filter: blur(0);
-  }
+.marquee-card:hover {
+  border-color: rgba(215, 173, 105, 0.7);
 }
 
 /* ==========================================
-   IMAGE STYLING
+   SHARED CARD PARTS
    ========================================== */
 
+.drawing-open {
+  position: absolute;
+  inset: 0;
+
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.drawing-open:focus-visible {
+  outline: 2px solid var(--draw-gold);
+  outline-offset: -2px;
+}
+
+.marquee-card img,
 .drawing-card img {
   display: block;
   width: 100%;
@@ -413,10 +320,6 @@
   background: #111;
   user-select: none;
   -webkit-user-drag: none;
-
-  transition:
-    transform 650ms cubic-bezier(0.2, 0.7, 0.2, 1),
-    filter 450ms ease;
 }
 
 .drawing-card-overlay {
@@ -427,103 +330,323 @@
 
   background: linear-gradient(
     145deg,
-    rgba(215, 173, 105, 0.10),
+    rgba(215, 173, 105, 0.1),
     transparent 38%,
     transparent 75%,
     rgba(0, 0, 0, 0.22)
   );
 
   opacity: 0.65;
-  transition: opacity 350ms ease;
+  transition: opacity 300ms ease;
 }
 
-.drawing-number {
-  position: absolute;
-  z-index: 2;
-  top: 12px;
-  left: 12px;
-
-  color: var(--draw-gold);
-  font-size: 10px;
-  letter-spacing: 2px;
-
-  text-shadow: 0 2px 8px #000;
-  pointer-events: none;
-}
-
-.drawing-expand {
-  position: absolute;
-  z-index: 2;
-  right: 10px;
-  bottom: 10px;
-
-  display: grid;
-  place-items: center;
-  width: 29px;
-  height: 29px;
-
-  color: #fff;
-  background: rgba(0, 0, 0, 0.65);
-  border: 1px solid rgba(215, 173, 105, 0.55);
-  border-radius: 50%;
-
-  font-size: 16px;
-  opacity: 0;
-  transform: translateY(5px);
-
-  transition:
-    opacity 300ms ease,
-    transform 300ms ease;
-}
-
-.drawing-card:hover {
-  z-index: 3;
-  border-color: rgba(215, 173, 105, 0.7);
-
-  box-shadow:
-    0 14px 40px rgba(0, 0, 0, 0.45),
-    0 0 20px rgba(215, 173, 105, 0.07);
-}
-
-.drawing-card:hover img {
-  transform: scale(1.045);
-  filter: contrast(1.04);
-}
-
+.marquee-card:hover .drawing-card-overlay,
 .drawing-card:hover .drawing-card-overlay {
   opacity: 1;
 }
 
-.drawing-card:hover .drawing-expand {
-  opacity: 1;
-  transform: translateY(0);
+/* ==========================================
+   VIEW ALL GRID (static: no heavy animation)
+   ========================================== */
+
+.drawings-reorder-bar {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  max-width: 1400px;
+  margin: -14px auto 16px;
+  padding: 0 6%;
+  box-sizing: border-box;
+}
+
+.drawings-reorder-bar p {
+  margin: 0;
+  color: var(--draw-muted);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+}
+
+.drawings-reset {
+  padding: 7px 14px;
+
+  border: 1px solid rgba(215, 173, 105, 0.4);
+  border-radius: 14px;
+
+  background: transparent;
+  color: var(--draw-white);
+
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+
+  transition: color 250ms ease, border-color 250ms ease;
+}
+
+.drawings-reset:hover {
+  color: var(--draw-gold);
+  border-color: var(--draw-gold);
+}
+
+.drawings-gallery {
+  position: relative;
+  z-index: 1;
+
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 19px;
+
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 6%;
+  box-sizing: border-box;
+}
+
+.drawings-empty {
+  grid-column: 1 / -1;
+  margin: 30px 0;
+  text-align: center;
+  color: var(--draw-muted);
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.drawing-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  aspect-ratio: 4 / 5;
+
+  overflow: hidden;
+  background: #121212;
+  border: 1px solid rgba(215, 173, 105, 0.17);
+  border-radius: 2px;
+
+  animation: cardFade 300ms ease both;
+  transition: border-color 250ms ease, box-shadow 250ms ease;
+}
+
+.drawing-card:hover {
+  border-color: rgba(215, 173, 105, 0.7);
+}
+
+.drawings-gallery.is-reordering .drawing-card,
+.drawings-gallery.is-reordering .drawing-card .drawing-open {
+  cursor: grab;
+}
+
+.drawing-card.is-dragging {
+  opacity: 0.35;
+}
+
+.drawing-card.is-over {
+  border-color: var(--draw-gold);
+  box-shadow: 0 0 0 2px var(--draw-gold);
+}
+
+/* Move buttons (reorder mode only) */
+
+.drawing-move {
+  position: absolute;
+  z-index: 3;
+  right: 8px;
+  bottom: 8px;
+
+  display: flex;
+  gap: 6px;
+}
+
+.drawing-move button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+
+  border: 1px solid rgba(215, 173, 105, 0.55);
+  border-radius: 50%;
+
+  background: rgba(12, 11, 9, 0.8);
+  color: var(--draw-white);
+
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.drawing-move button:hover:not(:disabled) {
+  color: var(--draw-gold);
+  border-color: var(--draw-gold);
+}
+
+.drawing-move button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Delete button (every image in View all) — uses assets/images.png */
+
+.drawing-remove {
+  position: absolute;
+  z-index: 3;
+  top: 8px;
+  right: 8px;
+
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+
+  border: 1px solid rgba(215, 173, 105, 0.55);
+  border-radius: 50%;
+
+  background: rgba(12, 11, 9, 0.8);
+  color: var(--draw-white);
+
+  cursor: pointer;
+
+  transition: border-color 200ms ease, background 200ms ease;
+}
+
+.drawing-remove:hover {
+  border-color: #ff7a6b;
+  background: rgba(40, 14, 12, 0.9);
+}
+
+/* The icon image inside the delete button.
+   (Overrides the general ".drawing-card img" card-image rule.) */
+.drawing-card .drawing-remove img {
+  display: block;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+
+  object-fit: contain;
+  background: transparent;
+  pointer-events: none;
+}
+
+@keyframes cardFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ==========================================
-   FOOTER
+   DELETE CONFIRMATION POPUP
    ========================================== */
 
-.drawings-footer {
+.delete-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000; /* above the lightbox */
+
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 15px;
+  justify-content: center;
 
-  max-width: 1400px;
-  margin: 27px auto 0;
-  padding-top: 15px;
+  padding: 20px;
+  box-sizing: border-box;
 
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.78);
+  animation: lightboxFade 200ms ease both;
+}
 
-  color: #827c74;
-  font-size: 9px;
+.delete-modal {
+  width: 100%;
+  max-width: 380px;
+  box-sizing: border-box;
+  padding: 28px 26px 22px;
+
+  text-align: center;
+  color: var(--draw-white, #f4f0e9);
+  background: #13110d;
+  border: 1px solid rgba(215, 173, 105, 0.55);
+  border-radius: 10px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.7);
+
+  animation: modalPop 250ms ease both;
+}
+
+.delete-modal h2 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+}
+
+.delete-modal p {
+  margin: 0 0 22px;
+  color: #a7a19a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.delete-modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.delete-modal-actions button {
+  flex: 1;
+  height: 40px;
+  padding: 0 14px;
+
+  border-radius: 20px;
+  font-size: 12px;
   letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  transition:
+    color 250ms ease,
+    border-color 250ms ease,
+    background 250ms ease;
+}
+
+.delete-modal-cancel {
+  background: transparent;
+  color: #e8e1d6;
+  border: 1px solid rgba(215, 173, 105, 0.55);
+}
+
+.delete-modal-cancel:hover {
+  color: #d7ad69;
+  border-color: #d7ad69;
+}
+
+.delete-modal-submit {
+  background: #d7ad69;
+  color: #14100a;
+  border: 1px solid #d7ad69;
+  font-weight: 700;
+}
+
+.delete-modal-submit:hover {
+  background: #e6c488;
+  border-color: #e6c488;
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 /* ==========================================
    FULL IMAGE LIGHTBOX
-   The close button and image start below the
-   site header so nothing overlaps it.
    ========================================== */
 
 .drawing-lightbox {
@@ -539,7 +662,6 @@
   box-sizing: border-box;
 
   background: rgba(0, 0, 0, 0.96);
-  backdrop-filter: blur(12px);
 
   animation: lightboxFade 250ms ease both;
   cursor: zoom-out;
@@ -616,18 +738,14 @@
   }
 }
 
-@keyframes ambientDrift {
-  from { transform: translate3d(-1%, 0, 0) scale(1); }
-  to { transform: translate3d(1%, -1%, 0) scale(1.04); }
-}
-
 /* ==========================================
    TABLET
    ========================================== */
 
 @media (max-width: 900px) {
   .drawings-page {
-    padding: 30px 4% 22px;
+    padding: 30px 0 22px;
+    --card-gap: 14px;
   }
 
   .drawings-gallery {
@@ -637,14 +755,6 @@
 
   .drawings-header {
     margin-bottom: 30px;
-  }
-
-  .drawing-card {
-    aspect-ratio: 4 / 5;
-  }
-
-  .drawing-card:nth-child(n) {
-    --sz: -250px;
   }
 
   .drawings-header h1 {
@@ -658,14 +768,24 @@
 
 @media (max-width: 768px) {
   .drawings-page {
-    --draw-header: 74px; /* header height on mobile */
+    --draw-header: 74px;
   }
 }
 
 @media (max-width: 560px) {
-  /* Less top padding = heading sits higher */
+  /* Full-height column: the rows stretch to fill the whole screen,
+     so there is no empty space at the bottom. */
   .drawings-page {
-    padding: 58px 15px 22px;
+    --card-gap: 11px;
+
+    display: flex;
+    flex-direction: column;
+
+    min-height: calc(100vh - var(--draw-header));
+    min-height: calc(100svh - var(--draw-header));
+
+    /* more top padding = title sits lower, away from the buttons */
+    padding: 84px 0 16px;
   }
 
   .drawings-page .drawings-back-btn {
@@ -677,13 +797,23 @@
     padding: 7px;
   }
 
-  .drawings-header {
-    margin-bottom: 25px;
+  .drawings-page .drawings-actions {
+    top: 12px;
+    right: 12px;
+    gap: 8px;
   }
 
-  .drawings-eyebrow {
-    font-size: 9px;
-    letter-spacing: 3px;
+  .drawings-page .drawings-upload-btn,
+  .drawings-page .drawings-reorder-btn,
+  .drawings-page .drawings-save-btn {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 10px;
+  }
+
+  .drawings-header {
+    flex: 0 0 auto;
+    margin-bottom: 24px;
   }
 
   .drawings-header h1 {
@@ -691,42 +821,86 @@
     letter-spacing: 5px;
   }
 
-  .drawings-subtitle {
-    font-size: 10px;
-    letter-spacing: 0.6px;
+  /* The marquee takes all remaining height and splits it between
+     the two rows. */
+  .drawings-marquee {
+    flex: 1 1 auto;
+    min-height: 0;
+    justify-content: center;
   }
 
-  .drawings-gallery {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 11px;
+  .marquee-row {
+    flex: 1 1 0;
+    min-height: 200px;
+    max-height: 360px;
   }
 
-  .drawing-card {
-    aspect-ratio: 3 / 4;
-    animation-duration: 1.45s;
-    animation-delay: calc(var(--index) * 65ms);
+  .marquee-track {
+    height: 100%;
   }
 
+  /* Cards size from the row height (width follows the 4:5 ratio) */
+  .marquee-card {
+    width: auto;
+    height: 100%;
+    aspect-ratio: 4 / 5;
+  }
+
+  .marquee-card img,
   .drawing-card img {
     padding: 5px;
   }
 
-  .drawing-number {
-    top: 8px;
-    left: 8px;
-    font-size: 9px;
+  /* View all grid */
+  .drawings-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+    padding: 0 15px;
   }
 
-  .drawing-expand {
-    width: 25px;
-    height: 25px;
-    opacity: 1;
-    transform: none;
+  .drawing-card {
+    aspect-ratio: 3 / 4;
   }
 
-  .drawings-footer {
-    font-size: 8px;
+  .drawings-reorder-bar {
+    margin-top: -10px;
+    padding: 0 15px;
+  }
+
+  .drawings-reorder-bar p {
+    font-size: 10px;
     letter-spacing: 1px;
+  }
+
+  .drawing-move {
+    right: 5px;
+    bottom: 5px;
+  }
+
+  .drawing-move button {
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+  }
+
+  .drawing-remove {
+    top: 5px;
+    right: 5px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .drawing-card .drawing-remove img {
+    width: 14px;
+    height: 14px;
+  }
+
+  .delete-modal {
+    padding: 24px 20px 18px;
+  }
+
+  .delete-modal h2 {
+    font-size: 17px;
   }
 
   .drawing-lightbox {
@@ -748,26 +922,50 @@
   }
 }
 
-/* Accessibility: respect reduced-motion preferences */
+/* Accessibility: respect reduced-motion preferences.
+   Rows stop moving and become swipeable/scrollable instead. */
 
 @media (prefers-reduced-motion: reduce) {
-  .drawings-background,
   .drawings-header,
   .drawing-card,
   .drawing-lightbox,
-  .drawing-lightbox img {
+  .drawing-lightbox img,
+  .delete-modal-backdrop,
+  .delete-modal {
     animation: none !important;
   }
 
-  .drawing-card {
-    opacity: 1;
-    transform: none;
-    filter: none;
+  .marquee-track {
+    animation: none !important;
   }
 
-  .drawing-card img,
-  .drawing-card-overlay,
-  .drawing-expand {
-    transition: none;
+  .marquee-row {
+    overflow-x: auto;
   }
+}
+.drawings-pending-files {
+  max-height: 150px;
+  overflow-y: auto;
+  margin: 12px 0 18px;
+  padding-left: 22px;
+  text-align: left;
+  color: var(--draw-white, #f4f0e9);
+  overflow-wrap: anywhere;
+}
+
+.drawings-pending-files li {
+  margin: 6px 0;
+}
+
+.drawings-actions button:disabled,
+.delete-modal-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.drawings-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }

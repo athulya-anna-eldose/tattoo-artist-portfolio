@@ -766,7 +766,9 @@
   .wg-lightbox-img,
   .wg-lightbox-close,
   .wg-lightbox-caption,
-  .wg-lightbox-navigation {
+  .wg-lightbox-navigation,
+  .wg-delete-backdrop,
+  .wg-delete-modal {
     animation-duration: 0.01ms !important;
   }
 }
@@ -951,4 +953,488 @@ section.wg-page > button.wg-back:hover {
 .wg-page .wg-page-background {
   filter: blur(4px) brightness(0.48) saturate(1.1);
   transform: translateZ(0) scale(1.04);
+}
+
+/* =========================================================
+   VIEW ALL + REORDER GRID
+   ========================================================= */
+
+section.wg-page > button.wg-viewall {
+  position: fixed;
+  top: calc(var(--wg-header) + 10px);
+  right: 16px;
+  z-index: 2000;
+
+  height: 34px;
+  padding: 0 16px;
+
+  border: 1px solid rgba(215, 173, 105, 0.55);
+  border-radius: 17px;
+
+  background: rgba(12, 11, 9, 0.85);
+  color: var(--wg-ivory);
+
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  transition: color 250ms ease, border-color 250ms ease, background 250ms ease;
+}
+
+section.wg-page > button.wg-viewall:hover {
+  color: var(--wg-bright);
+  border-color: var(--wg-bright);
+  background: #17130e;
+}
+
+.wg-all-view {
+  position: fixed;
+  top: var(--wg-header);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1500;
+
+  padding: 60px 5% 40px;
+  box-sizing: border-box;
+  overflow-y: auto;
+
+  background: rgba(8, 8, 7, 0.94);
+}
+
+.wg-all-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  max-width: 1250px;
+  margin: 0 auto 20px;
+}
+
+.wg-all-toolbar p {
+  margin: 0;
+  color: #c1b8aa;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.wg-all-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.wg-all-reset {
+  padding: 7px 14px;
+
+  border: 1px solid rgba(215, 173, 105, 0.4);
+  border-radius: 14px;
+
+  background: transparent;
+  color: var(--wg-ivory);
+
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.wg-all-reset:hover {
+  color: var(--wg-bright);
+  border-color: var(--wg-bright);
+}
+
+.wg-all-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+
+  max-width: 1250px;
+  margin: 0 auto;
+}
+
+.wg-all-empty {
+  grid-column: 1 / -1;
+  margin: 30px 0;
+  text-align: center;
+  color: #c1b8aa;
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.wg-all-item {
+  position: relative;
+  aspect-ratio: 445 / 550;
+  overflow: hidden;
+
+  border: 1px solid rgba(215, 173, 105, 0.3);
+  border-radius: 3px;
+  background: #111;
+
+  cursor: grab;
+  transition: border-color 200ms ease, opacity 200ms ease;
+}
+
+.wg-all-item:hover {
+  border-color: var(--wg-bright);
+}
+
+.wg-all-item.is-dragging {
+  opacity: 0.35;
+}
+
+.wg-all-item.is-over {
+  border-color: var(--wg-bright);
+  box-shadow: 0 0 0 2px var(--wg-bright);
+}
+
+.wg-all-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.wg-all-number {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  box-sizing: border-box;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  color: var(--wg-bright);
+  font-size: 11px;
+}
+
+.wg-all-move {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.wg-all-move button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+
+  border: 1px solid rgba(215, 173, 105, 0.5);
+  border-radius: 50%;
+
+  background: rgba(12, 11, 9, 0.8);
+  color: var(--wg-ivory);
+
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.wg-all-move button:hover:not(:disabled) {
+  color: var(--wg-bright);
+  border-color: var(--wg-bright);
+}
+
+.wg-all-move button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+@media (max-width: 900px) {
+  .wg-all-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  section.wg-page > button.wg-viewall {
+    right: 12px;
+    padding: 0 12px;
+    font-size: 10px;
+  }
+
+  .wg-all-view {
+    padding: 56px 12px 30px;
+  }
+
+  .wg-all-toolbar {
+    justify-content: flex-end;
+  }
+
+  .wg-all-toolbar p {
+    display: none;
+  }
+
+  .wg-all-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+/* =========================================================
+   UPLOAD BUTTON + TOP-RIGHT ACTIONS
+   ========================================================= */
+
+/* Holds Upload + View all side by side (same spot View all used) */
+section.wg-page > .wg-actions {
+  position: fixed;
+  top: calc(var(--wg-header) + 10px);
+  right: 16px;
+  z-index: 2000;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* View all keeps its exact look, now inside the group */
+section.wg-page .wg-actions button.wg-viewall,
+section.wg-page .wg-actions button.wg-upload-btn {
+  position: static;
+
+  height: 34px;
+  padding: 0 16px;
+
+  border: 1px solid rgba(215, 173, 105, 0.55);
+  border-radius: 17px;
+
+  background: rgba(12, 11, 9, 0.85);
+  color: var(--wg-ivory);
+
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  transition: color 250ms ease, border-color 250ms ease, background 250ms ease;
+}
+
+section.wg-page .wg-actions button.wg-viewall:hover,
+section.wg-page .wg-actions button.wg-upload-btn:hover {
+  color: var(--wg-bright);
+  border-color: var(--wg-bright);
+  background: #17130e;
+}
+
+/* =========================================================
+   DELETE BUTTON (View all grid) — uses assets/images.png
+   ========================================================= */
+
+.wg-all-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+
+  border: 1px solid rgba(215, 173, 105, 0.5);
+  border-radius: 50%;
+
+  background: rgba(12, 11, 9, 0.8);
+  color: var(--wg-ivory);
+
+  cursor: pointer;
+  transition: border-color 200ms ease, background 200ms ease;
+}
+
+.wg-all-remove:hover {
+  border-color: #ff7a6b;
+  background: rgba(40, 14, 12, 0.9);
+}
+
+/* The icon image inside the delete button.
+   (Overrides the general ".wg-all-item img" grid-image rule.) */
+.wg-all-item .wg-all-remove img {
+  display: block;
+  width: 16px;
+  height: 16px;
+
+  object-fit: contain;
+  background: transparent;
+  pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  section.wg-page > .wg-actions {
+    right: 12px;
+    gap: 8px;
+  }
+
+  section.wg-page .wg-actions button.wg-viewall,
+  section.wg-page .wg-actions button.wg-upload-btn {
+    padding: 0 12px;
+    font-size: 10px;
+  }
+
+  .wg-all-remove {
+    top: 5px;
+    right: 5px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .wg-all-item .wg-all-remove img {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* =========================================================
+   DELETE CONFIRMATION POPUP
+   ========================================================= */
+
+.wg-delete-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000; /* above the lightbox and the View all grid */
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+  box-sizing: border-box;
+
+  background: rgba(0, 0, 0, 0.78);
+  animation: wg-backdrop-in 200ms ease both;
+}
+
+.wg-delete-modal {
+  width: 100%;
+  max-width: 380px;
+  box-sizing: border-box;
+  padding: 28px 26px 22px;
+
+  text-align: center;
+  color: var(--wg-ivory);
+  background: #13110d;
+  border: 1px solid rgba(215, 173, 105, 0.55);
+  border-radius: 10px;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.7);
+
+  animation: wg-modal-pop 250ms ease both;
+}
+
+.wg-delete-modal h2 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+}
+
+.wg-delete-modal p {
+  margin: 0 0 22px;
+  color: #a7a19a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.wg-delete-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.wg-delete-actions button {
+  flex: 1;
+  height: 40px;
+  padding: 0 14px;
+
+  border-radius: 20px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  transition:
+    color 250ms ease,
+    border-color 250ms ease,
+    background 250ms ease;
+}
+
+.wg-delete-cancel {
+  background: transparent;
+  color: #e8e1d6;
+  border: 1px solid rgba(215, 173, 105, 0.55);
+}
+
+.wg-delete-cancel:hover {
+  color: var(--wg-bright);
+  border-color: var(--wg-bright);
+}
+
+.wg-delete-submit {
+  background: var(--wg-gold);
+  color: #14100a;
+  border: 1px solid var(--wg-gold);
+  font-weight: 700;
+}
+
+.wg-delete-submit:hover {
+  background: #e6c488;
+  border-color: #e6c488;
+}
+
+@keyframes wg-modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .wg-delete-modal {
+    padding: 24px 20px 18px;
+  }
+
+  .wg-delete-modal h2 {
+    font-size: 17px;
+  }
+}
+
+/* =========================================================
+   FIX: STOP SIDE CARDS OVERLAPPING THE CENTER CARD
+   Cards are stacked by z-index (center on top) instead of
+   being depth-sorted in 3D, so a tilted side card can never
+   cut through the active one.
+   ========================================================= */
+
+/* Perspective moves from the carousel onto the stage itself,
+   and the stage stops sorting its children in 3D. */
+.wg-page .wg-carousel {
+  perspective: none;
+}
+
+.wg-page .wg-fan-stage {
+  perspective: 1400px;
+  perspective-origin: center center;
+  transform-style: flat;
+}
+
+/* The active card always sits above its neighbours. */
+.wg-page .wg-slide.is-active {
+  z-index: 30 !important;
 }

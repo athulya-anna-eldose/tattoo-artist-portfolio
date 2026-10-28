@@ -1,0 +1,21 @@
+$kind: http-request
+name: http://localhost:8080/api/tattoos/upload
+description: 'Generated from cURL: curl.exe -X POST "http://localhost:8080/api/tattoos/upload" -F "file=@"C:\Users\DELL\Pictures\Basil Santhosh2.jpg"" -F "name=Portrait Tattoo" -F "description=Black and grey portrait" -F "price=2500"'
+url: http://localhost:8080/api/tattoos/upload
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src: C:UsersDELLPicturesBasil
+    - type: text
+      key: name
+      value: Portrait Tattoo
+    - type: text
+      key: description
+      value: Black and grey portrait
+    - type: text
+      key: price
+      value: "2500"
+order: 3000
