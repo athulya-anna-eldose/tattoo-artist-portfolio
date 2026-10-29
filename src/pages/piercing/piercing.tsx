@@ -1283,14 +1283,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
                 </button>
               )}
 
-              <button
-                type="button"
-                className="wg-all-reset"
-                onClick={() => void resetOrder()}
-                disabled={savingReorder}
-              >
-                Reset
-              </button>
+            
 
               {!isReordering && (
                 <button

@@ -1086,8 +1086,6 @@ function Work({ onBackToHome }: WorkProps) {
     }));
   };
 
-  // Reset to the default order (built-in images first, then uploads).
-  // While reordering it only changes the draft; Save commits it.
   const resetOrder = async () => {
     if (!activeCategory || isSavingReorder) return;
 
@@ -1645,14 +1643,7 @@ function Work({ onBackToHome }: WorkProps) {
                 </button>
               )}
 
-              <button
-                type="button"
-                className="wg-all-reset"
-                onClick={() => void resetOrder()}
-                disabled={isSavingReorder}
-              >
-                Reset
-              </button>
+             
 
               {!isReordering && (
                 <button

@@ -1298,14 +1298,6 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
                 </button>
               )}
 
-              <button
-                type="button"
-                className="drawings-reset"
-                onClick={() => void resetOrder()}
-                disabled={savingReorder}
-              >
-                Reset
-              </button>
 
               {!isReordering && (
                 <button
