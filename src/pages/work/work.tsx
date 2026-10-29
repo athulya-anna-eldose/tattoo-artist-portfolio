@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 import "./work.css";
 import cubeBackground from "../../assets/close-up-colorful-cube-pattern-with-black-background-generative-ai_958192-97660.avif";
@@ -59,7 +59,7 @@ interface UploadedImage {
   id: string;
   category: string;
   src: string;
-  backendId?: number;
+  backendId: number;
 }
 
 interface Category {
@@ -113,10 +113,157 @@ categories.forEach((category) => {
    Backend API
    --------------------------------------------------------- */
 
-const API_URL = `${import.meta.env.VITE_API_URL}/api/tattoos`;
+// Trailing slashes are removed so we never build "//api/..." URLs.
+const API_ROOT = String(import.meta.env.VITE_API_URL ?? "").replace(
+  /\/+$/,
+  ""
+);
+
+const API_URL = `${API_ROOT}/api/tattoos`;
+
+/**
+ * Turns whatever the backend returns for one tattoo into a full image URL.
+ */
+const IMAGE_FIELDS = [
+  "imageUrl",
+  "imagePath",
+  "image",
+  "url",
+  "filePath",
+  "fileUrl",
+  "fileName",
+  "filename",
+  "path",
+  "src",
+] as const;
+
+const resolveImageSrc = (item: unknown): string | null => {
+  if (!item || typeof item !== "object") return null;
+
+  const record = item as Record<string, unknown>;
+
+  for (const field of IMAGE_FIELDS) {
+    const value = record[field];
+
+    if (typeof value !== "string" || value.trim() === "") continue;
+
+    const raw = value.trim();
+
+    // Already a full URL (Cloudinary, S3, absolute backend URL...).
+    if (/^https?:\/\//i.test(raw)) return raw;
+
+    if (raw.startsWith("data:")) return raw;
+
+    const cleaned = raw.replace(/\\/g, "/").replace(/^\/+/, "");
+
+    if (cleaned.startsWith("uploads/")) {
+      return `${API_ROOT}/${cleaned}`;
+    }
+
+    return `${API_ROOT}/uploads/${cleaned}`;
+  }
+
+  return null;
+};
+
+const getBackendId = (item: unknown): number | null => {
+  if (!item || typeof item !== "object") return null;
+
+  const id = Number((item as Record<string, unknown>).id);
+
+  return Number.isInteger(id) && id > 0 ? id : null;
+};
+
+/**
+ * The upload request sends the category title in the "description" field,
+ * so the same field is used to find the category again when loading.
+ */
+const CATEGORY_FIELDS = ["description", "category", "categoryName"] as const;
+
+const resolveCategory = (item: unknown): string | null => {
+  if (!item || typeof item !== "object") return null;
+
+  const record = item as Record<string, unknown>;
+
+  for (const field of CATEGORY_FIELDS) {
+    const value = record[field];
+
+    if (typeof value !== "string") continue;
+
+    const wanted = value.trim().toLowerCase();
+
+    const match = categories.find(
+      (category) => category.title.toLowerCase() === wanted
+    );
+
+    if (match) return match.title;
+  }
+
+  return null;
+};
 
 /* ---------------------------------------------------------
-   Saved image order + deleted images
+   Shared settings stored on the BACKEND
+   (order of the images + which built-in images are deleted,
+   saved per category), so a change made on one device shows
+   on every device.  Same /api/settings endpoint that the
+   Piercing and Drawings pages use.
+   --------------------------------------------------------- */
+
+const SETTINGS_BASE = `${API_ROOT}/api/settings`;
+
+// How often an open page checks the server for changes made elsewhere.
+const SYNC_INTERVAL_MS = 30000;
+
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const orderKey = (category: string) => `work-order-${slugify(category)}`;
+const hiddenKey = (category: string) => `work-hidden-${slugify(category)}`;
+
+const sameJson = (a: unknown, b: unknown) =>
+  JSON.stringify(a) === JSON.stringify(b);
+
+const readSetting = async (key: string): Promise<string[] | null> => {
+  const response = await fetch(`${SETTINGS_BASE}/${key}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Could not read setting: ${response.status}`);
+  }
+
+  const data = (await response.json()) as { value?: unknown };
+
+  if (typeof data?.value !== "string") return null;
+
+  const parsed: unknown = JSON.parse(data.value);
+
+  return Array.isArray(parsed) &&
+    parsed.every((item) => typeof item === "string")
+    ? parsed
+    : null;
+};
+
+const writeSetting = async (key: string, ids: string[]): Promise<void> => {
+  const response = await fetch(`${SETTINGS_BASE}/${key}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ value: JSON.stringify(ids) }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Could not save setting: ${response.status}`);
+  }
+};
+
+/* ---------------------------------------------------------
+   Local copies (only a fast first paint; the server is the truth)
    --------------------------------------------------------- */
 
 const ORDER_STORAGE_KEY = "wg-image-order-v2";
@@ -220,79 +367,6 @@ const loadHidden = (): IdMap => {
   }
 
   return result;
-};
-
-/* ---------------------------------------------------------
-   Uploaded images storage — IndexedDB
-   --------------------------------------------------------- */
-
-const DB_NAME = "work-uploads-db";
-const STORE_NAME = "images";
-
-interface StoredUpload {
-  id: string;
-  category: string;
-  blob: Blob;
-  createdAt: number;
-  backendId?: number;
-}
-
-const openDB = (): Promise<IDBDatabase> =>
-  new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
-
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore(STORE_NAME, {
-        keyPath: "id",
-      });
-    };
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-
-const dbGetAll = async (): Promise<StoredUpload[]> => {
-  const db = await openDB();
-
-  return new Promise((resolve, reject) => {
-    const request = db
-      .transaction(STORE_NAME, "readonly")
-      .objectStore(STORE_NAME)
-      .getAll();
-
-    request.onsuccess = () =>
-      resolve(request.result as StoredUpload[]);
-
-    request.onerror = () => reject(request.error);
-  });
-};
-
-const dbPut = async (item: StoredUpload): Promise<void> => {
-  const db = await openDB();
-
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-
-    tx.objectStore(STORE_NAME).put(item);
-
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
-  });
-};
-
-const dbDelete = async (id: string): Promise<void> => {
-  const db = await openDB();
-
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-
-    tx.objectStore(STORE_NAME).delete(id);
-
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
-  });
 };
 
 interface BackButtonProps {
@@ -424,8 +498,10 @@ function Work({ onBackToHome }: WorkProps) {
   );
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Upload state + confirmation popup
+  // Uploaded images (loaded from the BACKEND) + confirmation popup
   const [uploads, setUploads] = useState<UploadedImage[]>([]);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [pendingUpload, setPendingUpload] = useState<{
     files: File[];
     category: string;
@@ -433,6 +509,7 @@ function Work({ onBackToHome }: WorkProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadsRef = useRef<UploadedImage[]>([]);
+  const objectUrlsRef = useRef<Set<string>>(new Set());
 
   uploadsRef.current = uploads;
 
@@ -442,42 +519,164 @@ function Work({ onBackToHome }: WorkProps) {
   const selectedImageRef = useRef<Tattoo | null>(null);
   const closeTimerRef = useRef<number | null>(null);
 
-  // Load previously uploaded images from IndexedDB.
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const stored = await dbGetAll();
-
-        if (cancelled) return;
-
-        stored.sort((a, b) => a.createdAt - b.createdAt);
-
-        setUploads(
-          stored.map((item) => ({
-            id: item.id,
-            category: item.category,
-            src: URL.createObjectURL(item.blob),
-            backendId: item.backendId,
-          }))
-        );
-      } catch {
-        // Storage unavailable — uploads won't persist.
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+  // Only used as a fallback if the server does not return an image URL.
+  const createObjectUrl = useCallback((blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    objectUrlsRef.current.add(url);
+    return url;
   }, []);
 
-  // Free object URLs when leaving the page.
-  useEffect(() => {
-    return () => {
-      uploadsRef.current.forEach((item) => {
-        URL.revokeObjectURL(item.src);
+  const releaseObjectUrl = useCallback((url: string) => {
+    if (objectUrlsRef.current.has(url)) {
+      URL.revokeObjectURL(url);
+      objectUrlsRef.current.delete(url);
+    }
+  }, []);
+
+  /* -------------------------------------------------------
+     Sync with the BACKEND (shared by every device).
+     Loads uploaded tattoos, the saved order and the deleted
+     images on page load, when you return to the tab, and
+     every 30 seconds.
+     ------------------------------------------------------- */
+
+  const busyRef = useRef(false);
+
+  busyRef.current =
+    isReordering ||
+    isUploading ||
+    isDeleting ||
+    isSavingReorder ||
+    pendingUpload !== null ||
+    showReorderConfirm ||
+    pendingDeleteId !== null;
+
+  const syncFromServer = useCallback(async (silent: boolean) => {
+    if (!silent) setLoadError(false);
+
+    try {
+      const [response, serverOrders, serverHidden] = await Promise.all([
+        fetch(API_URL, { cache: "no-store" }),
+        Promise.all(
+          categories.map((category) =>
+            readSetting(orderKey(category.title)).catch(() => null)
+          )
+        ),
+        Promise.all(
+          categories.map((category) =>
+            readSetting(hiddenKey(category.title)).catch(() => null)
+          )
+        ),
+      ]);
+
+      if (!response.ok) {
+        throw new Error(`Server status ${response.status}`);
+      }
+
+      const data: unknown = await response.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("The tattoos API did not return a list.");
+      }
+
+      // Do not change the screen while the user is in the middle of
+      // reordering, uploading or deleting.
+      if (silent && busyRef.current) return;
+
+      const loaded: UploadedImage[] = [];
+
+      data.forEach((entry) => {
+        const backendId = getBackendId(entry);
+        const src = resolveImageSrc(entry);
+        const category = resolveCategory(entry);
+
+        if (backendId === null || !src || !category) return;
+
+        loaded.push({
+          id: `up-${backendId}`,
+          category,
+          src,
+          backendId,
+        });
       });
+
+      setUploads((previous) =>
+        sameJson(previous, loaded) ? previous : loaded
+      );
+
+      // The saved server order wins. Categories without a saved order keep
+      // this device's order; new uploads are added after it automatically.
+      setOrders((previous) => {
+        const next = { ...previous };
+        let changed = false;
+
+        categories.forEach((category, index) => {
+          const saved = serverOrders[index];
+
+          if (saved && !sameJson(previous[category.title], saved)) {
+            next[category.title] = saved;
+            changed = true;
+          }
+        });
+
+        return changed ? next : previous;
+      });
+
+      setHidden((previous) => {
+        const next = { ...previous };
+        let changed = false;
+
+        categories.forEach((category, index) => {
+          const saved = serverHidden[index];
+
+          if (saved && !sameJson(previous[category.title] ?? [], saved)) {
+            next[category.title] = saved;
+            changed = true;
+          }
+        });
+
+        return changed ? next : previous;
+      });
+    } catch (error) {
+      console.error("Could not sync tattoos with the backend:", error);
+
+      if (!silent) setLoadError(true);
+    }
+  }, []);
+
+  // First load (and "Try again").
+  useEffect(() => {
+    void syncFromServer(false);
+  }, [syncFromServer, reloadKey]);
+
+  // Pick up changes made on other devices.
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState !== "visible") return;
+      if (busyRef.current) return;
+
+      void syncFromServer(true);
+    };
+
+    const interval = window.setInterval(refresh, SYNC_INTERVAL_MS);
+
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [syncFromServer]);
+
+  // Release any fallback blob URLs when the page unmounts.
+  useEffect(() => {
+    const urls = objectUrlsRef.current;
+
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.clear();
     };
   }, []);
 
@@ -578,7 +777,7 @@ function Work({ onBackToHome }: WorkProps) {
     selectedImageRef.current = selectedImage;
   }, [selectedImage]);
 
-  // Persist the custom order.
+  // Local copy of the committed order (fast first paint only).
   useEffect(() => {
     try {
       localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(orders));
@@ -587,7 +786,7 @@ function Work({ onBackToHome }: WorkProps) {
     }
   }, [orders]);
 
-  // Persist deleted built-in images.
+  // Local copy of the deleted built-in images (fast first paint only).
   useEffect(() => {
     try {
       localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(hidden));
@@ -869,6 +1068,24 @@ function Work({ onBackToHome }: WorkProps) {
     }
   };
 
+  /** Saves the order to the database AND to the shared settings. */
+  const commitOrder = async (category: string, orderedIds: string[]) => {
+    await saveBackendOrder(orderedIds);
+
+    // Keep ids of hidden items at the end so "Restore deleted" still works.
+    const fullOrder = [
+      ...orderedIds,
+      ...(orders[category] ?? []).filter((id) => !orderedIds.includes(id)),
+    ];
+
+    await writeSetting(orderKey(category), fullOrder);
+
+    setOrders((prev) => ({
+      ...prev,
+      [category]: fullOrder,
+    }));
+  };
+
   // Reset to the default order (built-in images first, then uploads).
   // While reordering it only changes the draft; Save commits it.
   const resetOrder = async () => {
@@ -882,15 +1099,8 @@ function Work({ onBackToHome }: WorkProps) {
       return;
     }
 
-    const category = activeCategory;
-
     try {
-      await saveBackendOrder(restored);
-
-      setOrders((prev) => ({
-        ...prev,
-        [category]: restored,
-      }));
+      await commitOrder(activeCategory, restored);
     } catch (error) {
       console.error("Reset order failed:", error);
 
@@ -928,23 +1138,14 @@ function Work({ onBackToHome }: WorkProps) {
     setShowAll(false);
   };
 
-  // Confirm -> call PUT /api/tattoos/reorder -> done.
+  // Confirm -> reorder API -> shared settings -> done.
   const confirmSaveOrder = async () => {
     if (!activeCategory || !isReordering || isSavingReorder) return;
-
-    const category = activeCategory;
-    const newIds = [...gridIds];
 
     setIsSavingReorder(true);
 
     try {
-      await saveBackendOrder(newIds);
-
-      // Backend accepted it (or there was nothing to send) — commit locally.
-      setOrders((prev) => ({
-        ...prev,
-        [category]: newIds,
-      }));
+      await commitOrder(activeCategory, [...gridIds]);
 
       setDraftOrder(null);
       setIsReordering(false);
@@ -994,13 +1195,11 @@ function Work({ onBackToHome }: WorkProps) {
     if (!pendingUpload || isUploading) return;
 
     const { files, category } = pendingUpload;
-    const added: UploadedImage[] = [];
 
     setIsUploading(true);
 
     for (const file of files) {
       try {
-        // Upload the file to Spring Boot first so it receives a database ID.
         const formData = new FormData();
         formData.append("file", file);
         formData.append("name", file.name);
@@ -1018,46 +1217,34 @@ function Work({ onBackToHome }: WorkProps) {
           );
         }
 
-        const result: { id?: number | string } = await response.json();
+        const saved: unknown = await response.json();
+        const backendId = getBackendId(saved);
 
-        if (result.id === undefined || result.id === null) {
+        if (backendId === null) {
           throw new Error(
-            "The upload API did not return an image ID. Check the response from POST /api/tattoos/upload."
+            "The upload API did not return a valid image ID. Check the response from POST /api/tattoos/upload."
           );
         }
 
-        const backendId = Number(result.id);
+        const id = `up-${backendId}`;
 
-        if (!Number.isFinite(backendId)) {
-          throw new Error("The backend returned an invalid image ID.");
-        }
+        if (!uploadsRef.current.some((item) => item.id === id)) {
+          // Prefer the real server URL so every device sees the same image.
+          // Fall back to a local preview only if the server sent no URL.
+          const serverSrc = resolveImageSrc(saved);
+          const src = serverSrc ?? createObjectUrl(file);
 
-        const id = `up-${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2, 8)}`;
-
-        const src = URL.createObjectURL(file);
-
-        const uploadedImage: UploadedImage = {
-          id,
-          category,
-          src,
-          backendId,
-        };
-
-        try {
-          await dbPut({
+          const uploadedImage: UploadedImage = {
             id,
             category,
-            blob: file,
-            createdAt: Date.now(),
+            src,
             backendId,
-          });
-        } catch {
-          // It remains visible for this session if IndexedDB is unavailable.
-        }
+          };
 
-        added.push(uploadedImage);
+          uploadsRef.current = [...uploadsRef.current, uploadedImage];
+
+          setUploads((previous) => [...previous, uploadedImage]);
+        }
       } catch (error) {
         console.error("Tattoo upload failed:", error);
 
@@ -1070,10 +1257,6 @@ function Work({ onBackToHome }: WorkProps) {
           `Could not upload "${file.name}" to the backend.\n\n${message}`
         );
       }
-    }
-
-    if (added.length > 0) {
-      setUploads((prev) => [...prev, ...added]);
     }
 
     setIsUploading(false);
@@ -1094,10 +1277,12 @@ function Work({ onBackToHome }: WorkProps) {
   };
 
   // Submit the confirmation popup to delete the image.
-  const deleteItem = async (id: string) => {
+  // Returns true when the image was removed.
+  const deleteItem = async (id: string): Promise<boolean> => {
     const item = itemsById.get(id);
 
-    if (!item || !activeCategory || isDeleting) return;
+    // Already removed (for example deleted on another device).
+    if (!item || !activeCategory) return true;
 
     const category = activeCategory;
 
@@ -1106,88 +1291,74 @@ function Work({ onBackToHome }: WorkProps) {
 
       if (!uploadedItem) {
         window.alert("Could not find this uploaded image.");
-        return;
+        return false;
       }
 
-      /*
-       * Only call the backend when this image has a saved backend ID.
-       * Older uploads created before backend integration may not have one.
-       */
-      if (uploadedItem.backendId !== undefined) {
-        setIsDeleting(true);
-
-        try {
-          const response = await fetch(
-            `${API_URL}/${uploadedItem.backendId}`,
-            {
-              method: "DELETE",
-            }
-          );
-
-          if (!response.ok) {
-            const errorText = await response.text().catch(() => "");
-
-            throw new Error(
-              errorText ||
-                `Server returned status ${response.status}`
-            );
-          }
-        } catch (error) {
-          console.error("Backend tattoo deletion failed:", error);
-
-          const message =
-            error instanceof Error
-              ? error.message
-              : "An unknown error occurred.";
-
-          window.alert(
-            `The image could not be deleted from the backend.\n\n${message}\n\nThe image has been kept in your gallery.`
-          );
-
-          return;
-        } finally {
-          setIsDeleting(false);
-        }
-      }
-
-      /*
-       * Remove the local image only after the backend delete succeeds.
-       * If it is an older local-only upload without a backend ID,
-       * remove it from this browser as before.
-       */
       try {
-        await dbDelete(id);
+        const response = await fetch(
+          `${API_URL}/${uploadedItem.backendId}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => "");
+
+          throw new Error(
+            errorText || `Server returned status ${response.status}`
+          );
+        }
       } catch (error) {
-        console.error("Could not delete the local IndexedDB record:", error);
+        console.error("Backend tattoo deletion failed:", error);
+
+        const message =
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred.";
+
+        window.alert(
+          `The image could not be deleted from the backend.\n\n${message}\n\nThe image has been kept in your gallery.`
+        );
+
+        return false;
       }
 
-      URL.revokeObjectURL(uploadedItem.src);
+      releaseObjectUrl(uploadedItem.src);
+
+      uploadsRef.current = uploadsRef.current.filter(
+        (upload) => upload.id !== id
+      );
 
       setUploads((prev) => prev.filter((upload) => upload.id !== id));
-
-      if (selectedImageRef.current?.id === id) {
-        selectedImageRef.current = null;
-        setSelectedImage(null);
-        setIsClosing(false);
-      }
     } else {
-      // Built-in image: preserve the existing browser-only hide behaviour.
-      setHidden((prev) => {
-        const list = prev[category] ?? [];
+      // Built-in image: save the "deleted" list on the server so every
+      // device hides it.
+      const list = hidden[category] ?? [];
+      const nextList = list.includes(id) ? list : [...list, id];
 
-        if (list.includes(id)) return prev;
+      try {
+        await writeSetting(hiddenKey(category), nextList);
+      } catch (error) {
+        console.error("Could not save the deleted image:", error);
 
-        return {
-          ...prev,
-          [category]: [...list, id],
-        };
-      });
+        window.alert(
+          "Could not delete this image on the server. Please check that the backend is running and try again."
+        );
 
-      if (selectedImageRef.current?.id === id) {
-        selectedImageRef.current = null;
-        setSelectedImage(null);
-        setIsClosing(false);
+        return false;
       }
+
+      setHidden((prev) => ({
+        ...prev,
+        [category]: nextList,
+      }));
+    }
+
+    if (selectedImageRef.current?.id === id) {
+      selectedImageRef.current = null;
+      setSelectedImage(null);
+      setIsClosing(false);
     }
 
     setOrders((prev) => {
@@ -1204,6 +1375,8 @@ function Work({ onBackToHome }: WorkProps) {
     setDraftOrder((prev) =>
       prev ? prev.filter((itemId) => itemId !== id) : prev
     );
+
+    return true;
   };
 
   const confirmDelete = async () => {
@@ -1211,19 +1384,37 @@ function Work({ onBackToHome }: WorkProps) {
 
     if (!id || isDeleting) return;
 
-    await deleteItem(id);
+    setIsDeleting(true);
 
-    setPendingDeleteId(null);
+    try {
+      const deleted = await deleteItem(id);
+
+      if (deleted) {
+        setPendingDeleteId(null);
+      }
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  const restoreDeleted = () => {
+  const restoreDeleted = async () => {
     if (!activeCategory) return;
 
-    setHidden((prev) => {
-      const copy = { ...prev };
-      delete copy[activeCategory];
-      return copy;
-    });
+    const category = activeCategory;
+
+    try {
+      await writeSetting(hiddenKey(category), []);
+
+      setHidden((prev) => {
+        const copy = { ...prev };
+        delete copy[category];
+        return copy;
+      });
+    } catch (error) {
+      console.error("Could not restore deleted images:", error);
+
+      window.alert("Could not restore the deleted images. Please try again.");
+    }
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
@@ -1364,6 +1555,7 @@ function Work({ onBackToHome }: WorkProps) {
                 type="button"
                 className="wg-upload-btn"
                 onClick={openFilePicker}
+                disabled={isUploading}
               >
                 Upload
               </button>
@@ -1399,6 +1591,39 @@ function Work({ onBackToHome }: WorkProps) {
         onChange={handleFiles}
       />
 
+      {/* Shown when the server could not be reached */}
+      {loadError && (
+        <div
+          role="status"
+          style={{
+            position: "fixed",
+            left: "50%",
+            bottom: "24px",
+            transform: "translateX(-50%)",
+            zIndex: 60,
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "10px 16px",
+            borderRadius: "12px",
+            background: "rgba(0, 0, 0, 0.78)",
+            color: "#fff",
+            fontSize: "14px",
+          }}
+        >
+          <span>
+            Could not load uploaded images. The server may be waking up.
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setReloadKey((key) => key + 1)}
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* VIEW ALL + REORDER GRID */}
       {activeCategory && showAll && (
         <div className="wg-all-view">
@@ -1414,7 +1639,7 @@ function Work({ onBackToHome }: WorkProps) {
                 <button
                   type="button"
                   className="wg-all-reset"
-                  onClick={restoreDeleted}
+                  onClick={() => void restoreDeleted()}
                 >
                   Restore deleted
                 </button>
@@ -1787,7 +2012,7 @@ function Work({ onBackToHome }: WorkProps) {
               <button
                 type="button"
                 className="wg-delete-submit"
-                onClick={confirmDelete}
+                onClick={() => void confirmDelete()}
                 disabled={isDeleting}
               >
                 {isDeleting ? "Deleting..." : "Submit"}
@@ -1809,7 +2034,7 @@ function Work({ onBackToHome }: WorkProps) {
           confirmLabel="Confirm"
           busyLabel="Uploading..."
           busy={isUploading}
-          onConfirm={confirmUpload}
+          onConfirm={() => void confirmUpload()}
           onCancel={cancelUpload}
         />
       )}
@@ -1822,7 +2047,7 @@ function Work({ onBackToHome }: WorkProps) {
           confirmLabel="Confirm"
           busyLabel="Saving..."
           busy={isSavingReorder}
-          onConfirm={confirmSaveOrder}
+          onConfirm={() => void confirmSaveOrder()}
           onCancel={cancelSaveOrder}
         />
       )}
