@@ -47,8 +47,7 @@ interface SavedPiercing {
   id: number | string;
 }
 
-const API_URL = "http://localhost:8080/api/piercings";
-
+const API_URL = `${import.meta.env.VITE_API_URL}/api/piercings`;
 const baseTattoos: Tattoo[] = [
   tattoo1,
   tattoo2,

@@ -113,7 +113,7 @@ categories.forEach((category) => {
    Backend API
    --------------------------------------------------------- */
 
-const API_URL = "http://localhost:8080/api/tattoos";
+const API_URL = `${import.meta.env.VITE_API_URL}/api/tattoos`;
 
 /* ---------------------------------------------------------
    Saved image order + deleted images

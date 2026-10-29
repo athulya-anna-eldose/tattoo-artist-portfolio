@@ -66,8 +66,7 @@ interface DrawingsProps {
 
 type ViewMode = "marquee" | "all";
 
-const API_BASE = "http://localhost:8080/api/drawings";
-
+const API_BASE = `${import.meta.env.VITE_API_URL}/api/drawings`;
 const ORDER_STORAGE_KEY = "drawings-order-v2";
 const OLD_ORDER_STORAGE_KEY = "drawings-order-v1";
 const HIDDEN_STORAGE_KEY = "drawings-hidden-v1";
