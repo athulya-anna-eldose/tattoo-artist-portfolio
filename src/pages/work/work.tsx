@@ -412,7 +412,8 @@ function Work({ onBackToHome }: WorkProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
 
-  // Unsaved reorder (draft) + its confirmation popup
+  // Reorder mode: Reorder -> (Cancel | Save) -> confirm popup -> API
+  const [isReordering, setIsReordering] = useState(false);
   const [draftOrder, setDraftOrder] = useState<string[] | null>(null);
   const [showReorderConfirm, setShowReorderConfirm] = useState(false);
   const [isSavingReorder, setIsSavingReorder] = useState(false);
@@ -537,9 +538,9 @@ function Work({ onBackToHome }: WorkProps) {
     [displayIds, itemsById]
   );
 
-  // Order shown in the "View all" grid — the unsaved draft if there is one.
+  // Order shown in the "View all" grid — the draft while reordering.
   const gridIds = useMemo(() => {
-    if (!draftOrder) return displayIds;
+    if (!isReordering || !draftOrder) return displayIds;
 
     const seen = new Set<string>();
     const ids: string[] = [];
@@ -556,19 +557,11 @@ function Work({ onBackToHome }: WorkProps) {
     });
 
     return ids;
-  }, [draftOrder, displayIds, itemsById]);
+  }, [isReordering, draftOrder, displayIds, itemsById]);
 
   const gridTattoos: Tattoo[] = useMemo(
     () => gridIds.map((id) => itemsById.get(id)!),
     [gridIds, itemsById]
-  );
-
-  const hasUnsavedOrder = useMemo(
-    () =>
-      draftOrder !== null &&
-      (gridIds.length !== displayIds.length ||
-        gridIds.some((id, i) => id !== displayIds[i])),
-    [draftOrder, gridIds, displayIds]
   );
 
   const backgroundImage: Tattoo =
@@ -692,6 +685,7 @@ function Work({ onBackToHome }: WorkProps) {
     setShowAll(false);
     setPendingDeleteId(null);
     setPendingUpload(null);
+    setIsReordering(false);
     setDraftOrder(null);
     setShowReorderConfirm(false);
     setActiveIndex(0);
@@ -710,6 +704,7 @@ function Work({ onBackToHome }: WorkProps) {
     setShowAll(false);
     setPendingDeleteId(null);
     setPendingUpload(null);
+    setIsReordering(false);
     setDraftOrder(null);
     setShowReorderConfirm(false);
     setActiveCategory(null);
@@ -805,13 +800,36 @@ function Work({ onBackToHome }: WorkProps) {
 
   /* ---------- Reorder ---------- */
 
+  const clearDrag = () => {
+    setDragIndex(null);
+    setOverIndex(null);
+  };
+
+  const startReorder = () => {
+    setDraftOrder([...displayIds]);
+    setIsReordering(true);
+    clearDrag();
+  };
+
+  const cancelReorder = () => {
+    if (isSavingReorder) return;
+
+    setShowReorderConfirm(false);
+    setIsReordering(false);
+    setDraftOrder(null);
+    clearDrag();
+  };
+
   // Moving images only changes the local draft. Nothing is sent to the
-  // backend until the user confirms in the popup.
+  // backend until the user presses Save and then confirms in the popup.
   const moveImage = (from: number, to: number) => {
     if (
       !activeCategory ||
+      !isReordering ||
       from === to ||
+      from < 0 ||
       to < 0 ||
+      from >= gridIds.length ||
       to >= gridIds.length
     ) {
       return;
@@ -819,25 +837,77 @@ function Work({ onBackToHome }: WorkProps) {
 
     const next = [...gridIds];
     const [moved] = next.splice(from, 1);
+
+    if (!moved) return;
+
     next.splice(to, 0, moved);
 
     setDraftOrder(next);
   };
 
-  // Back to the default order (still a draft until confirmed).
-  const resetOrder = () => {
-    if (!activeCategory) return;
+  /** Sends the order of uploaded images to PUT /api/tattoos/reorder. */
+  const saveBackendOrder = async (orderedIds: string[]) => {
+    // Only uploaded images exist in the database, so only they have IDs.
+    const orderedBackendIds = orderedIds
+      .map((id) => uploads.find((upload) => upload.id === id)?.backendId)
+      .filter((id): id is number => id !== undefined);
 
-    setDraftOrder(Array.from(itemsById.keys()));
+    if (orderedBackendIds.length === 0) return;
+
+    const response = await fetch(`${API_URL}/reorder`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(orderedBackendIds),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+
+      throw new Error(
+        errorText || `Server returned status ${response.status}`
+      );
+    }
   };
 
-  const discardOrderChanges = () => {
-    setDraftOrder(null);
-    setShowReorderConfirm(false);
+  // Reset to the default order (built-in images first, then uploads).
+  // While reordering it only changes the draft; Save commits it.
+  const resetOrder = async () => {
+    if (!activeCategory || isSavingReorder) return;
+
+    const restored = Array.from(itemsById.keys());
+
+    if (isReordering) {
+      setDraftOrder(restored);
+      clearDrag();
+      return;
+    }
+
+    const category = activeCategory;
+
+    try {
+      await saveBackendOrder(restored);
+
+      setOrders((prev) => ({
+        ...prev,
+        [category]: restored,
+      }));
+    } catch (error) {
+      console.error("Reset order failed:", error);
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred.";
+
+      window.alert(
+        `The order could not be reset on the backend.\n\n${message}`
+      );
+    }
   };
 
-  const askSaveOrder = () => {
-    if (!hasUnsavedOrder || isSavingReorder) return;
+  // Save button -> opens the confirmation popup (no API call yet).
+  const requestSaveReorder = () => {
+    if (!isReordering || isSavingReorder) return;
     setShowReorderConfirm(true);
   };
 
@@ -846,49 +916,29 @@ function Work({ onBackToHome }: WorkProps) {
     setShowReorderConfirm(false);
   };
 
-  // Closing "View all" with unsaved changes asks for confirmation first.
+  // Closing "View all" (Done / back arrow) discards any unsaved draft.
   const requestCloseAll = () => {
+    if (isSavingReorder) return;
+
     setPendingDeleteId(null);
-
-    if (hasUnsavedOrder) {
-      setShowReorderConfirm(true);
-      return;
-    }
-
+    setShowReorderConfirm(false);
+    setIsReordering(false);
     setDraftOrder(null);
+    clearDrag();
     setShowAll(false);
   };
 
-  // Confirm → call PUT /api/tattoos/reorder.
+  // Confirm -> call PUT /api/tattoos/reorder -> done.
   const confirmSaveOrder = async () => {
-    if (!activeCategory || isSavingReorder) return;
+    if (!activeCategory || !isReordering || isSavingReorder) return;
 
     const category = activeCategory;
     const newIds = [...gridIds];
 
-    // Only uploaded images exist in the database, so only they have IDs.
-    const orderedBackendIds = newIds
-      .map((id) => uploads.find((upload) => upload.id === id)?.backendId)
-      .filter((id): id is number => id !== undefined);
-
     setIsSavingReorder(true);
 
     try {
-      if (orderedBackendIds.length > 0) {
-        const response = await fetch(`${API_URL}/reorder`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(orderedBackendIds),
-        });
-
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => "");
-
-          throw new Error(
-            errorText || `Server returned status ${response.status}`
-          );
-        }
-      }
+      await saveBackendOrder(newIds);
 
       // Backend accepted it (or there was nothing to send) — commit locally.
       setOrders((prev) => ({
@@ -897,7 +947,9 @@ function Work({ onBackToHome }: WorkProps) {
       }));
 
       setDraftOrder(null);
+      setIsReordering(false);
       setShowReorderConfirm(false);
+      clearDrag();
     } catch (error) {
       console.error("Reorder failed:", error);
 
@@ -1283,32 +1335,56 @@ function Work({ onBackToHome }: WorkProps) {
         }
       />
 
-      {/* UPLOAD + VIEW ALL BUTTONS */}
+      {/* UPLOAD + VIEW ALL / DONE, or CANCEL + SAVE while reordering */}
       {activeCategory && !selectedImage && (
         <div className="wg-actions">
-          <button
-            type="button"
-            className="wg-upload-btn"
-            onClick={openFilePicker}
-          >
-            Upload
-          </button>
+          {isReordering ? (
+            <>
+              <button
+                type="button"
+                className="wg-viewall"
+                onClick={cancelReorder}
+                disabled={isSavingReorder}
+              >
+                Cancel
+              </button>
 
-          {(filteredTattoos.length > 0 || hiddenIds.length > 0) && (
-            <button
-              type="button"
-              className="wg-viewall"
-              onClick={() => {
-                if (showAll) {
-                  requestCloseAll();
-                } else {
-                  setPendingDeleteId(null);
-                  setShowAll(true);
-                }
-              }}
-            >
-              {showAll ? "Close all" : "View all"}
-            </button>
+              <button
+                type="button"
+                className="wg-upload-btn"
+                onClick={requestSaveReorder}
+                disabled={isSavingReorder}
+              >
+                Save
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="wg-upload-btn"
+                onClick={openFilePicker}
+              >
+                Upload
+              </button>
+
+              {(filteredTattoos.length > 0 || hiddenIds.length > 0) && (
+                <button
+                  type="button"
+                  className="wg-viewall"
+                  onClick={() => {
+                    if (showAll) {
+                      requestCloseAll();
+                    } else {
+                      setPendingDeleteId(null);
+                      setShowAll(true);
+                    }
+                  }}
+                >
+                  {showAll ? "Done" : "View all"}
+                </button>
+              )}
+            </>
           )}
         </div>
       )}
@@ -1328,32 +1404,13 @@ function Work({ onBackToHome }: WorkProps) {
         <div className="wg-all-view">
           <div className="wg-all-toolbar">
             <p>
-              Drag images to reorder · click an image to open it in the gallery
-              · tap the delete icon to remove an image
+              {isReordering
+                ? "Drag images to rearrange them, then press Save."
+                : "Click an image to open it in the gallery. Use Reorder to change the order."}
             </p>
 
             <div className="wg-all-toolbar-actions">
-              {hasUnsavedOrder && (
-                <>
-                  <button
-                    type="button"
-                    className="wg-all-reset"
-                    onClick={askSaveOrder}
-                  >
-                    Save order
-                  </button>
-
-                  <button
-                    type="button"
-                    className="wg-all-reset"
-                    onClick={discardOrderChanges}
-                  >
-                    Discard changes
-                  </button>
-                </>
-              )}
-
-              {hiddenIds.length > 0 && (
+              {hiddenIds.length > 0 && !isReordering && (
                 <button
                   type="button"
                   className="wg-all-reset"
@@ -1366,10 +1423,21 @@ function Work({ onBackToHome }: WorkProps) {
               <button
                 type="button"
                 className="wg-all-reset"
-                onClick={resetOrder}
+                onClick={() => void resetOrder()}
+                disabled={isSavingReorder}
               >
-                Reset order
+                Reset
               </button>
+
+              {!isReordering && (
+                <button
+                  type="button"
+                  className="wg-all-reset"
+                  onClick={startReorder}
+                >
+                  Reorder
+                </button>
+              )}
             </div>
           </div>
 
@@ -1390,8 +1458,13 @@ function Work({ onBackToHome }: WorkProps) {
                     ? "is-over"
                     : ""
                 }`}
-                draggable
+                draggable={isReordering}
                 onDragStart={(event) => {
+                  if (!isReordering) {
+                    event.preventDefault();
+                    return;
+                  }
+
                   setDragIndex(index);
                   event.dataTransfer.effectAllowed = "move";
                   event.dataTransfer.setData(
@@ -1400,6 +1473,8 @@ function Work({ onBackToHome }: WorkProps) {
                   );
                 }}
                 onDragOver={(event) => {
+                  if (!isReordering) return;
+
                   event.preventDefault();
 
                   if (overIndex !== index) {
@@ -1407,29 +1482,26 @@ function Work({ onBackToHome }: WorkProps) {
                   }
                 }}
                 onDrop={(event) => {
+                  if (!isReordering) return;
+
                   event.preventDefault();
 
                   if (dragIndex !== null) {
                     moveImage(dragIndex, index);
                   }
 
-                  setDragIndex(null);
-                  setOverIndex(null);
+                  clearDrag();
                 }}
-                onDragEnd={() => {
-                  setDragIndex(null);
-                  setOverIndex(null);
-                }}
+                onDragEnd={clearDrag}
                 onClick={() => {
-                  // Grid order may be an unsaved draft, so look the
-                  // image up by id in the saved carousel order.
+                  if (isReordering) return;
+
                   const carouselIndex = filteredTattoos.findIndex(
                     (item) => item.id === tattoo.id
                   );
 
                   setActiveIndex(carouselIndex >= 0 ? carouselIndex : 0);
                   setShowAll(false);
-                  setDraftOrder(null);
                 }}
               >
                 <img
@@ -1441,48 +1513,52 @@ function Work({ onBackToHome }: WorkProps) {
 
                 <span className="wg-all-number">{index + 1}</span>
 
-                <button
-                  type="button"
-                  className="wg-all-remove"
-                  aria-label="Delete image"
-                  title="Delete"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    askDelete(tattoo.id);
-                  }}
-                >
-                  <img
-                    src={deleteIcon}
-                    alt=""
-                    draggable={false}
-                  />
-                </button>
-
-                <span className="wg-all-move">
+                {!isReordering && (
                   <button
                     type="button"
-                    aria-label="Move earlier"
-                    disabled={index === 0}
+                    className="wg-all-remove"
+                    aria-label="Delete image"
+                    title="Delete"
                     onClick={(event) => {
                       event.stopPropagation();
-                      moveImage(index, index - 1);
+                      askDelete(tattoo.id);
                     }}
                   >
-                    ‹
+                    <img
+                      src={deleteIcon}
+                      alt=""
+                      draggable={false}
+                    />
                   </button>
+                )}
 
-                  <button
-                    type="button"
-                    aria-label="Move later"
-                    disabled={index === gridTattoos.length - 1}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      moveImage(index, index + 1);
-                    }}
-                  >
-                    ›
-                  </button>
-                </span>
+                {isReordering && (
+                  <span className="wg-all-move">
+                    <button
+                      type="button"
+                      aria-label="Move earlier"
+                      disabled={index === 0}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        moveImage(index, index - 1);
+                      }}
+                    >
+                      ‹
+                    </button>
+
+                    <button
+                      type="button"
+                      aria-label="Move later"
+                      disabled={index === gridTattoos.length - 1}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        moveImage(index, index + 1);
+                      }}
+                    >
+                      ›
+                    </button>
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -1738,7 +1814,7 @@ function Work({ onBackToHome }: WorkProps) {
         />
       )}
 
-      {/* REORDER CONFIRMATION POPUP */}
+      {/* REORDER CONFIRMATION POPUP: no PUT request before Confirm. */}
       {showReorderConfirm && (
         <ConfirmDialog
           title="Save the new order?"
