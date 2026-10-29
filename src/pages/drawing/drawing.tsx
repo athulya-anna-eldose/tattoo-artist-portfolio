@@ -1,4 +1,3 @@
-
 import {
   memo,
   useCallback,
@@ -7,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { CSSProperties, ChangeEvent } from "react";
+import type { CSSProperties, ChangeEvent, ReactNode } from "react";
 import "./drawing.css";
 
 import deleteIcon from "../../assets/images.png";
@@ -53,26 +52,87 @@ interface UploadedImage {
   backendId?: number;
 }
 
-interface StoredUpload {
-  id: string;
-  blob: Blob;
-  createdAt: number;
-  backendId?: number;
-}
-
 interface DrawingsProps {
   onBackToHome: () => void;
 }
 
 type ViewMode = "marquee" | "all";
 
-const API_BASE = `${import.meta.env.VITE_API_URL}/api/drawings`;
+/* ---------------------------------------------------------
+   API configuration
+   --------------------------------------------------------- */
+
+// Base URL of the backend (set VITE_API_URL in Vercel).
+// Trailing slashes are removed so we never build "//api/..." URLs.
+const API_ROOT = String(import.meta.env.VITE_API_URL ?? "").replace(
+  /\/+$/,
+  ""
+);
+
+const API_BASE = `${API_ROOT}/api/drawings`;
+
 const ORDER_STORAGE_KEY = "drawings-order-v2";
 const OLD_ORDER_STORAGE_KEY = "drawings-order-v1";
 const HIDDEN_STORAGE_KEY = "drawings-hidden-v1";
 
-const DB_NAME = "drawings-uploads-db";
-const STORE_NAME = "images";
+/**
+ * Turns whatever the backend returns for one drawing into a full image URL.
+ *
+ * The backend field name is not known for sure, so several common names
+ * are tried. If your API uses a different field, add it to the list below.
+ */
+const IMAGE_FIELDS = [
+  "imageUrl",
+  "imagePath",
+  "image",
+  "url",
+  "filePath",
+  "fileUrl",
+  "fileName",
+  "filename",
+  "path",
+  "src",
+] as const;
+
+const resolveImageSrc = (drawing: unknown): string | null => {
+  if (!drawing || typeof drawing !== "object") return null;
+
+  const record = drawing as Record<string, unknown>;
+
+  for (const field of IMAGE_FIELDS) {
+    const value = record[field];
+
+    if (typeof value !== "string" || value.trim() === "") continue;
+
+    const raw = value.trim();
+
+    // Already a full URL (Cloudinary, S3, absolute backend URL...).
+    if (/^https?:\/\//i.test(raw)) return raw;
+
+    // Data URLs can be used directly.
+    if (raw.startsWith("data:")) return raw;
+
+    const cleaned = raw.replace(/\\/g, "/").replace(/^\/+/, "");
+
+    // "uploads/abc.jpg" or "/uploads/abc.jpg"
+    if (cleaned.startsWith("uploads/")) {
+      return `${API_ROOT}/${cleaned}`;
+    }
+
+    // Just a file name such as "abc.jpg"
+    return `${API_ROOT}/uploads/${cleaned}`;
+  }
+
+  return null;
+};
+
+const getBackendId = (drawing: unknown): number | null => {
+  if (!drawing || typeof drawing !== "object") return null;
+
+  const id = Number((drawing as Record<string, unknown>).id);
+
+  return Number.isInteger(id) && id > 0 ? id : null;
+};
 
 const baseItems: GalleryItem[] = drawings.map((src, index) => ({
   id: `base-${index}`,
@@ -83,7 +143,7 @@ const baseItems: GalleryItem[] = drawings.map((src, index) => ({
 const defaultOrder = baseItems.map((item) => item.id);
 
 /* ---------------------------------------------------------
-   Local storage
+   Local storage (order of the built-in images and hidden items)
    --------------------------------------------------------- */
 
 const loadOrder = (): string[] => {
@@ -117,9 +177,7 @@ const loadOrder = (): string[] => {
             index < drawings.length
         )
       ) {
-        return (parsed as number[]).map(
-          (index) => `base-${index}`
-        );
+        return (parsed as number[]).map((index) => `base-${index}`);
       }
     }
   } catch (error) {
@@ -148,87 +206,6 @@ const loadHidden = (): string[] => {
   }
 
   return [];
-};
-
-/* ---------------------------------------------------------
-   IndexedDB
-   --------------------------------------------------------- */
-
-const openDB = (): Promise<IDBDatabase> =>
-  new Promise((resolve, reject) => {
-    if (!("indexedDB" in window)) {
-      reject(new Error("IndexedDB is not supported."));
-      return;
-    }
-
-    const request = indexedDB.open(DB_NAME, 1);
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, {
-          keyPath: "id",
-        });
-      }
-    };
-
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-
-const dbGetAll = async (): Promise<StoredUpload[]> => {
-  const db = await openDB();
-
-  try {
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readonly");
-      const request = tx.objectStore(STORE_NAME).getAll();
-
-      request.onsuccess = () =>
-        resolve(request.result as StoredUpload[]);
-
-      request.onerror = () => reject(request.error);
-    });
-  } finally {
-    db.close();
-  }
-};
-
-const dbPut = async (item: StoredUpload): Promise<void> => {
-  const db = await openDB();
-
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readwrite");
-
-      tx.objectStore(STORE_NAME).put(item);
-
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error);
-    });
-  } finally {
-    db.close();
-  }
-};
-
-const dbDelete = async (id: string): Promise<void> => {
-  const db = await openDB();
-
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readwrite");
-
-      tx.objectStore(STORE_NAME).delete(id);
-
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error);
-    });
-  } finally {
-    db.close();
-  }
 };
 
 /* ---------------------------------------------------------
@@ -270,7 +247,7 @@ interface ConfirmModalProps {
   busy?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
-  children?: React.ReactNode;
+  children?: ReactNode;
 }
 
 const ConfirmModal = ({
@@ -355,10 +332,7 @@ const MarqueeRow = memo(function MarqueeRow({
       Math.ceil(MIN_CARDS_PER_HALF / items.length)
     );
 
-    return Array.from(
-      { length: repetitions },
-      () => items
-    ).flat();
+    return Array.from({ length: repetitions }, () => items).flat();
   }, [items]);
 
   const duration = half.length * SECONDS_PER_CARD;
@@ -369,9 +343,7 @@ const MarqueeRow = memo(function MarqueeRow({
     <div className="marquee-row" role="list" aria-label={label}>
       <div
         className={`marquee-track ${reverse ? "is-reverse" : ""}`}
-        style={
-          { "--duration": `${duration}s` } as CSSProperties
-        }
+        style={{ "--duration": `${duration}s` } as CSSProperties}
       >
         {[0, 1].map((copy) =>
           half.map((item, index) => (
@@ -388,10 +360,12 @@ const MarqueeRow = memo(function MarqueeRow({
                 aria-label="View drawing"
                 tabIndex={copy === 1 ? -1 : 0}
               >
+                {/* eager: iPhone Safari does not reliably lazy-load images
+                    that sit off-screen inside an animated track */}
                 <img
                   src={item.src}
                   alt="Tattoo drawing"
-                  loading={copy === 0 && index < 4 ? "eager" : "lazy"}
+                  loading="eager"
                   decoding="async"
                   draggable={false}
                 />
@@ -410,12 +384,8 @@ const MarqueeRow = memo(function MarqueeRow({
    Main page
    --------------------------------------------------------- */
 
-export default function Drawings({
-  onBackToHome,
-}: DrawingsProps) {
-  const [selectedImage, setSelectedImage] = useState<string | null>(
-    null
-  );
+export default function Drawings({ onBackToHome }: DrawingsProps) {
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const [view, setView] = useState<ViewMode>("marquee");
 
@@ -424,6 +394,8 @@ export default function Drawings({
 
   const [uploads, setUploads] = useState<UploadedImage[]>([]);
   const [uploadsReady, setUploadsReady] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [isReordering, setIsReordering] = useState(false);
   const [draft, setDraft] = useState<string[] | null>(null);
@@ -431,9 +403,7 @@ export default function Drawings({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
 
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(
-    null
-  );
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [showUploadConfirm, setShowUploadConfirm] = useState(false);
@@ -450,6 +420,7 @@ export default function Drawings({
 
   uploadsRef.current = uploads;
 
+  // Only used as a fallback if the server does not return an image URL.
   const createObjectUrl = useCallback((blob: Blob) => {
     const url = URL.createObjectURL(blob);
     objectUrlsRef.current.add(url);
@@ -463,27 +434,59 @@ export default function Drawings({
     }
   }, []);
 
-  // Load local uploads once.
+  /* -------------------------------------------------------
+     Load uploaded drawings from the BACKEND (shared by every
+     device: desktop, iPhone, your client's phone...)
+     ------------------------------------------------------- */
+
   useEffect(() => {
     let cancelled = false;
 
     const loadUploads = async () => {
-      try {
-        const stored = await dbGetAll();
+      setLoadError(false);
 
-        stored.sort((a, b) => a.createdAt - b.createdAt);
+      try {
+        const response = await fetch(API_BASE);
+
+        if (!response.ok) {
+          throw new Error(`Server status ${response.status}`);
+        }
+
+        const data: unknown = await response.json();
+
+        if (!Array.isArray(data)) {
+          throw new Error("The drawings API did not return a list.");
+        }
 
         if (cancelled) return;
 
-        const loaded = stored.map((item) => ({
-          id: item.id,
-          src: createObjectUrl(item.blob),
-          backendId: item.backendId,
-        }));
+        const loaded: UploadedImage[] = [];
+
+        data.forEach((entry) => {
+          const backendId = getBackendId(entry);
+          const src = resolveImageSrc(entry);
+
+          if (backendId === null || !src) return;
+
+          loaded.push({
+            id: `up-${backendId}`,
+            src,
+            backendId,
+          });
+        });
 
         setUploads(loaded);
+
+        // The server decides the order of uploaded drawings.
+        // Built-in images keep the order saved on this device.
+        setOrder((previous) => [
+          ...previous.filter((id) => !id.startsWith("up-")),
+          ...loaded.map((item) => item.id),
+        ]);
       } catch (error) {
-        console.error("Could not load cached drawings:", error);
+        console.error("Could not load drawings from backend:", error);
+
+        if (!cancelled) setLoadError(true);
       } finally {
         if (!cancelled) setUploadsReady(true);
       }
@@ -494,13 +497,15 @@ export default function Drawings({
     return () => {
       cancelled = true;
     };
-  }, [createObjectUrl]);
+  }, [reloadKey]);
 
-  // Release all local image URLs when the component unmounts.
+  // Release any fallback blob URLs when the component unmounts.
   useEffect(() => {
+    const urls = objectUrlsRef.current;
+
     return () => {
-      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-      objectUrlsRef.current.clear();
+      urls.forEach((url) => URL.revokeObjectURL(url));
+      urls.clear();
     };
   }, []);
 
@@ -584,15 +589,13 @@ export default function Drawings({
     [orderedDrawings]
   );
 
-  // Save the gallery order only after IndexedDB has finished loading.
+  // Save the order of the built-in images only after the backend list
+  // has finished loading.
   useEffect(() => {
     if (!uploadsReady) return;
 
     try {
-      localStorage.setItem(
-        ORDER_STORAGE_KEY,
-        JSON.stringify(displayIds)
-      );
+      localStorage.setItem(ORDER_STORAGE_KEY, JSON.stringify(displayIds));
     } catch (error) {
       console.error("Could not save drawing order:", error);
     }
@@ -600,10 +603,7 @@ export default function Drawings({
 
   useEffect(() => {
     try {
-      localStorage.setItem(
-        HIDDEN_STORAGE_KEY,
-        JSON.stringify(hidden)
-      );
+      localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(hidden));
     } catch (error) {
       console.error("Could not save hidden drawings:", error);
     }
@@ -612,9 +612,7 @@ export default function Drawings({
   // Escape closes an open modal or the image preview.
   useEffect(() => {
     const hasModal =
-      pendingDeleteId !== null ||
-      showUploadConfirm ||
-      showReorderConfirm;
+      pendingDeleteId !== null || showUploadConfirm || showReorderConfirm;
 
     if (!hasModal && !selectedImage) return;
 
@@ -760,9 +758,8 @@ export default function Drawings({
 
     const backendIds = next
       .map((id) => itemsById.get(id))
-      .filter(
-        (item): item is GalleryItem =>
-          Boolean(item?.uploaded && item.backendId != null)
+      .filter((item): item is GalleryItem =>
+        Boolean(item?.uploaded && item.backendId != null)
       )
       .map((item) => item.backendId as number);
 
@@ -790,13 +787,7 @@ export default function Drawings({
         "Could not reset the order on the server. Please check that the backend is running and try again."
       );
     }
-  }, [
-    isReordering,
-    savingReorder,
-    itemsById,
-    uploads,
-    clearDrag,
-  ]);
+  }, [isReordering, savingReorder, itemsById, uploads, clearDrag]);
 
   const restoreDeleted = useCallback(() => {
     setHidden([]);
@@ -806,22 +797,19 @@ export default function Drawings({
      Upload flow: select -> confirm -> upload
      ------------------------------------------------------- */
 
-  const handleFiles = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const selected = Array.from(event.target.files ?? []).filter(
-        (file) => file.type.startsWith("image/")
-      );
+  const handleFiles = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(event.target.files ?? []).filter((file) =>
+      file.type.startsWith("image/")
+    );
 
-      // Allow selecting the same file again later.
-      event.target.value = "";
+    // Allow selecting the same file again later.
+    event.target.value = "";
 
-      if (selected.length === 0) return;
+    if (selected.length === 0) return;
 
-      setPendingFiles(selected);
-      setShowUploadConfirm(true);
-    },
-    []
-  );
+    setPendingFiles(selected);
+    setShowUploadConfirm(true);
+  }, []);
 
   const cancelUpload = useCallback(() => {
     if (uploading) return;
@@ -853,7 +841,7 @@ export default function Drawings({
         } catch {
           setPendingFiles(pendingFiles.slice(index));
           alert(
-            `Could not connect to the backend while uploading "${file.name}". The remaining files are still selected.`
+            `Could not connect to the backend while uploading "${file.name}". The server may be waking up, so wait a minute and try again. The remaining files are still selected.`
           );
           return;
         }
@@ -871,7 +859,7 @@ export default function Drawings({
           return;
         }
 
-        let savedDrawing: { id?: unknown };
+        let savedDrawing: unknown;
 
         try {
           savedDrawing = await response.json();
@@ -883,9 +871,9 @@ export default function Drawings({
           return;
         }
 
-        const backendId = Number(savedDrawing.id);
+        const backendId = getBackendId(savedDrawing);
 
-        if (!Number.isInteger(backendId) || backendId <= 0) {
+        if (backendId === null) {
           setPendingFiles(pendingFiles.slice(index + 1));
           alert(
             `The server response for "${file.name}" does not contain a valid drawing ID. Check your upload API response.`
@@ -895,13 +883,16 @@ export default function Drawings({
 
         const id = `up-${backendId}`;
 
-        // Avoid duplicates if an upload response was already cached.
+        // Avoid duplicates if this drawing is already in the gallery.
         if (uploadsRef.current.some((item) => item.id === id)) {
           setPendingFiles(pendingFiles.slice(index + 1));
           continue;
         }
 
-        const src = createObjectUrl(file);
+        // Prefer the real server URL so every device sees the same image.
+        // Fall back to a local preview only if the server sent no URL.
+        const serverSrc = resolveImageSrc(savedDrawing);
+        const src = serverSrc ?? createObjectUrl(file);
 
         const uploadedItem: UploadedImage = {
           id,
@@ -909,10 +900,9 @@ export default function Drawings({
           backendId,
         };
 
-        // Update the gallery immediately after each successful upload.
         setUploads((previous) => {
           if (previous.some((item) => item.id === id)) {
-            releaseObjectUrl(src);
+            if (!serverSrc) releaseObjectUrl(src);
             return previous;
           }
 
@@ -922,18 +912,6 @@ export default function Drawings({
         setOrder((previous) =>
           previous.includes(id) ? previous : [...previous, id]
         );
-
-        // Browser caching is optional; the backend upload has succeeded.
-        try {
-          await dbPut({
-            id,
-            blob: file,
-            createdAt: Date.now(),
-            backendId,
-          });
-        } catch (error) {
-          console.error("Could not cache uploaded drawing:", error);
-        }
 
         // Remove completed files from the pending list so retries do not
         // upload already completed files a second time.
@@ -951,12 +929,7 @@ export default function Drawings({
     } finally {
       setUploading(false);
     }
-  }, [
-    uploading,
-    pendingFiles,
-    createObjectUrl,
-    releaseObjectUrl,
-  ]);
+  }, [uploading, pendingFiles, createObjectUrl, releaseObjectUrl]);
 
   /* -------------------------------------------------------
      Reorder flow: edit -> Save -> confirm -> backend
@@ -984,9 +957,8 @@ export default function Drawings({
     // Only uploaded drawings are sent to the backend.
     const backendIds = next
       .map((id) => itemsById.get(id))
-      .filter(
-        (item): item is GalleryItem =>
-          Boolean(item?.uploaded && item.backendId != null)
+      .filter((item): item is GalleryItem =>
+        Boolean(item?.uploaded && item.backendId != null)
       )
       .map((item) => item.backendId as number);
 
@@ -1003,9 +975,7 @@ export default function Drawings({
         if (!response.ok) {
           const message = await response.text().catch(() => "");
 
-          throw new Error(
-            message || `Reorder failed: ${response.status}`
-          );
+          throw new Error(message || `Reorder failed: ${response.status}`);
         }
       }
 
@@ -1023,12 +993,7 @@ export default function Drawings({
     } finally {
       setSavingReorder(false);
     }
-  }, [
-    draft,
-    savingReorder,
-    itemsById,
-    clearDrag,
-  ]);
+  }, [draft, savingReorder, itemsById, clearDrag]);
 
   /* -------------------------------------------------------
      Delete flow: request -> confirm -> delete
@@ -1060,23 +1025,14 @@ export default function Drawings({
             return;
           }
 
-          const response = await fetch(
-            `${API_BASE}/${item.backendId}`,
-            { method: "DELETE" }
-          );
+          const response = await fetch(`${API_BASE}/${item.backendId}`, {
+            method: "DELETE",
+          });
 
           if (!response.ok) {
             const message = await response.text().catch(() => "");
 
-            throw new Error(
-              message || `Delete failed: ${response.status}`
-            );
-          }
-
-          try {
-            await dbDelete(id);
-          } catch (error) {
-            console.error("Could not remove the local cached file:", error);
+            throw new Error(message || `Delete failed: ${response.status}`);
           }
 
           releaseObjectUrl(item.src);
@@ -1094,14 +1050,10 @@ export default function Drawings({
           setSelectedImage(null);
         }
 
-        setOrder((previous) =>
-          previous.filter((itemId) => itemId !== id)
-        );
+        setOrder((previous) => previous.filter((itemId) => itemId !== id));
 
         setDraft((previous) =>
-          previous
-            ? previous.filter((itemId) => itemId !== id)
-            : previous
+          previous ? previous.filter((itemId) => itemId !== id) : previous
         );
 
         setPendingDeleteId(null);
@@ -1123,10 +1075,13 @@ export default function Drawings({
     await deleteItem(pendingDeleteId);
   }, [pendingDeleteId, deleting, deleteItem]);
 
-  const openImage = useCallback((src: string) => {
-    if (isReordering) return;
-    setSelectedImage(src);
-  }, [isReordering]);
+  const openImage = useCallback(
+    (src: string) => {
+      if (isReordering) return;
+      setSelectedImage(src);
+    },
+    [isReordering]
+  );
 
   /* -------------------------------------------------------
      Render
@@ -1208,6 +1163,22 @@ export default function Drawings({
         </h1>
       </header>
 
+      {loadError && (
+        <div className="drawings-status" role="status">
+          <p>
+            Could not load uploaded drawings. The server may be waking up.
+          </p>
+
+          <button
+            type="button"
+            className="drawings-reset"
+            onClick={() => setReloadKey((key) => key + 1)}
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {view === "all" ? (
         <>
           <div className="drawings-reorder-bar">
@@ -1266,7 +1237,8 @@ export default function Drawings({
           >
             {gridItems.length === 0 && (
               <p className="drawings-empty">
-                No images available. Upload some drawings or restore deleted ones.
+                No images available. Upload some drawings or restore deleted
+                ones.
               </p>
             )}
 
@@ -1275,9 +1247,7 @@ export default function Drawings({
                 className={`drawing-card ${
                   dragIndex === index ? "is-dragging" : ""
                 } ${
-                  overIndex === index && dragIndex !== index
-                    ? "is-over"
-                    : ""
+                  overIndex === index && dragIndex !== index ? "is-over" : ""
                 }`}
                 key={item.id}
                 draggable={isReordering}
@@ -1367,10 +1337,7 @@ export default function Drawings({
           </section>
         </>
       ) : (
-        <section
-          className="drawings-marquee"
-          aria-label="Drawing portfolio"
-        >
+        <section className="drawings-marquee" aria-label="Drawing portfolio">
           <MarqueeRow
             items={rowTop}
             label="Drawings row 1"
@@ -1436,9 +1403,7 @@ export default function Drawings({
         >
           <ul className="drawings-pending-files">
             {pendingFiles.map((file, index) => (
-              <li key={`${file.name}-${file.size}-${index}`}>
-                {file.name}
-              </li>
+              <li key={`${file.name}-${file.size}-${index}`}>{file.name}</li>
             ))}
           </ul>
         </ConfirmModal>
