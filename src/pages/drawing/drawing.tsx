@@ -77,9 +77,6 @@ const HIDDEN_STORAGE_KEY = "drawings-hidden-v1";
 
 /**
  * Turns whatever the backend returns for one drawing into a full image URL.
- *
- * The backend field name is not known for sure, so several common names
- * are tried. If your API uses a different field, add it to the list below.
  */
 const IMAGE_FIELDS = [
   "imageUrl",
@@ -134,6 +131,54 @@ const getBackendId = (drawing: unknown): number | null => {
   return Number.isInteger(id) && id > 0 ? id : null;
 };
 
+/* ---------------------------------------------------------
+   Shared settings stored on the BACKEND
+   (order of all images + which built-in images are deleted),
+   so a change made on one device shows on every device.
+   Same /api/settings endpoint that the Piercing page uses.
+   --------------------------------------------------------- */
+
+const SETTINGS_BASE = `${API_ROOT}/api/settings`;
+const ORDER_KEY = "drawings-order";
+const HIDDEN_KEY = "drawings-hidden";
+
+const readSetting = async (key: string): Promise<string[] | null> => {
+  const response = await fetch(`${SETTINGS_BASE}/${key}`);
+
+  if (!response.ok) {
+    throw new Error(`Could not read setting: ${response.status}`);
+  }
+
+  const data = (await response.json()) as { value?: unknown };
+
+  if (typeof data?.value !== "string") return null;
+
+  const parsed: unknown = JSON.parse(data.value);
+
+  return Array.isArray(parsed) &&
+    parsed.every((item) => typeof item === "string")
+    ? parsed
+    : null;
+};
+
+const writeSetting = async (key: string, ids: string[]): Promise<void> => {
+  const response = await fetch(`${SETTINGS_BASE}/${key}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ value: JSON.stringify(ids) }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Could not save setting: ${response.status}`);
+  }
+};
+
+/* ---------------------------------------------------------
+   Built-in images
+   --------------------------------------------------------- */
+
 const baseItems: GalleryItem[] = drawings.map((src, index) => ({
   id: `base-${index}`,
   src,
@@ -142,9 +187,7 @@ const baseItems: GalleryItem[] = drawings.map((src, index) => ({
 
 const defaultOrder = baseItems.map((item) => item.id);
 
-/* ---------------------------------------------------------
-   Local storage (order of the built-in images and hidden items)
-   --------------------------------------------------------- */
+/* Local copies are only a fast first paint; the server is the truth. */
 
 const loadOrder = (): string[] => {
   try {
@@ -435,8 +478,8 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
   }, []);
 
   /* -------------------------------------------------------
-     Load uploaded drawings from the BACKEND (shared by every
-     device: desktop, iPhone, your client's phone...)
+     Load uploaded drawings, the saved order and the deleted
+     list from the BACKEND (shared by every device).
      ------------------------------------------------------- */
 
   useEffect(() => {
@@ -446,7 +489,11 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
       setLoadError(false);
 
       try {
-        const response = await fetch(API_BASE);
+        const [response, serverOrder, serverHidden] = await Promise.all([
+          fetch(API_BASE),
+          readSetting(ORDER_KEY).catch(() => null),
+          readSetting(HIDDEN_KEY).catch(() => null),
+        ]);
 
         if (!response.ok) {
           throw new Error(`Server status ${response.status}`);
@@ -477,12 +524,16 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
 
         setUploads(loaded);
 
-        // The server decides the order of uploaded drawings.
-        // Built-in images keep the order saved on this device.
-        setOrder((previous) => [
-          ...previous.filter((id) => !id.startsWith("up-")),
-          ...loaded.map((item) => item.id),
-        ]);
+        // The saved server order wins. If none exists yet, keep this
+        // device's order for built-in images and add the uploads after it.
+        setOrder((previous) =>
+          serverOrder ?? [
+            ...previous.filter((id) => !id.startsWith("up-")),
+            ...loaded.map((item) => item.id),
+          ]
+        );
+
+        if (serverHidden) setHidden(serverHidden);
       } catch (error) {
         console.error("Could not load drawings from backend:", error);
 
@@ -589,8 +640,7 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
     [orderedDrawings]
   );
 
-  // Save the order of the built-in images only after the backend list
-  // has finished loading.
+  // Local copy of the committed order (fast first paint only).
   useEffect(() => {
     if (!uploadsReady) return;
 
@@ -661,7 +711,14 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
   }, [uploading]);
 
   const openViewAll = useCallback(() => {
+    setPendingDeleteId(null);
     setView("all");
+    clearDrag();
+  }, [clearDrag]);
+
+  const closeViewAll = useCallback(() => {
+    setPendingDeleteId(null);
+    setView("marquee");
     clearDrag();
   }, [clearDrag]);
 
@@ -672,11 +729,13 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
   }, [displayIds, clearDrag]);
 
   const cancelReorder = useCallback(() => {
+    if (savingReorder) return;
+
     setDraft(null);
     setIsReordering(false);
     setShowReorderConfirm(false);
     clearDrag();
-  }, [clearDrag]);
+  }, [savingReorder, clearDrag]);
 
   const handleBack = useCallback(() => {
     if (uploading || savingReorder || deleting) return;
@@ -745,52 +804,91 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
     [isReordering, visibleIds]
   );
 
+  /** Sends the order of uploaded drawings to the reorder API. */
+  const saveBackendOrder = useCallback(
+    async (orderedIds: string[]) => {
+      const backendIds = orderedIds
+        .map((id) => itemsById.get(id))
+        .filter((item): item is GalleryItem =>
+          Boolean(item?.uploaded && item.backendId != null)
+        )
+        .map((item) => item.backendId as number);
+
+      // Built-in images are local assets and have no database IDs.
+      // Only uploaded drawings are sent to the reorder API.
+      if (backendIds.length === 0) return;
+
+      const response = await fetch(`${API_BASE}/reorder`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(backendIds),
+      });
+
+      if (!response.ok) {
+        const message = await response.text().catch(() => "");
+
+        throw new Error(message || `Reorder failed: ${response.status}`);
+      }
+    },
+    [itemsById]
+  );
+
   // Reset the order to the original built-in order, followed by uploads.
   const resetOrder = useCallback(async () => {
-    if (isReordering || savingReorder) return;
+    if (savingReorder) return;
 
-    const next = [
+    const restored = [
       ...defaultOrder.filter((id) => itemsById.has(id)),
-      ...uploads
-        .map((item) => item.id)
-        .filter((id) => itemsById.has(id)),
+      ...uploads.map((item) => item.id).filter((id) => itemsById.has(id)),
     ];
 
-    const backendIds = next
-      .map((id) => itemsById.get(id))
-      .filter((item): item is GalleryItem =>
-        Boolean(item?.uploaded && item.backendId != null)
-      )
-      .map((item) => item.backendId as number);
+    // While reordering, Reset only changes the draft. Save commits it.
+    if (isReordering) {
+      setDraft(restored);
+      clearDrag();
+      return;
+    }
 
     try {
-      if (backendIds.length > 0) {
-        const response = await fetch(`${API_BASE}/reorder`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(backendIds),
-        });
+      await saveBackendOrder(restored);
 
-        if (!response.ok) {
-          throw new Error(`Reset failed: ${response.status}`);
-        }
-      }
+      // Keep ids of hidden items at the end so "Restore deleted" still works.
+      const fullOrder = [
+        ...restored,
+        ...order.filter((id) => !restored.includes(id)),
+      ];
 
-      setOrder(next);
-      setDraft(null);
-      clearDrag();
+      await writeSetting(ORDER_KEY, fullOrder);
+
+      setOrder(fullOrder);
     } catch (error) {
       console.error("Could not reset drawing order:", error);
+
       alert(
         "Could not reset the order on the server. Please check that the backend is running and try again."
       );
     }
-  }, [isReordering, savingReorder, itemsById, uploads, clearDrag]);
+  }, [
+    savingReorder,
+    isReordering,
+    itemsById,
+    uploads,
+    order,
+    saveBackendOrder,
+    clearDrag,
+  ]);
 
-  const restoreDeleted = useCallback(() => {
-    setHidden([]);
+  const restoreDeleted = useCallback(async () => {
+    try {
+      await writeSetting(HIDDEN_KEY, []);
+      setHidden([]);
+    } catch (error) {
+      console.error("Could not restore deleted drawings:", error);
+
+      alert("Could not restore the deleted images. Please try again.");
+    }
   }, []);
 
   /* -------------------------------------------------------
@@ -932,7 +1030,8 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
   }, [uploading, pendingFiles, createObjectUrl, releaseObjectUrl]);
 
   /* -------------------------------------------------------
-     Reorder flow: edit -> Save -> confirm -> backend
+     Reorder flow: Reorder -> Save -> confirm -> reorder API
+     -> settings -> done
      ------------------------------------------------------- */
 
   const requestSaveReorder = useCallback(() => {
@@ -947,39 +1046,24 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
   }, [savingReorder]);
 
   const confirmSaveReorder = useCallback(async () => {
-    if (!draft || savingReorder) return;
+    if (!isReordering || !draft || savingReorder) return;
 
     setSavingReorder(true);
 
-    const next = draft.filter((id) => itemsById.has(id));
-
-    // The built-in images are local assets and do not have database IDs.
-    // Only uploaded drawings are sent to the backend.
-    const backendIds = next
-      .map((id) => itemsById.get(id))
-      .filter((item): item is GalleryItem =>
-        Boolean(item?.uploaded && item.backendId != null)
-      )
-      .map((item) => item.backendId as number);
-
     try {
-      if (backendIds.length > 0) {
-        const response = await fetch(`${API_BASE}/reorder`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(backendIds),
-        });
+      const orderedIds = draft.filter((id) => itemsById.has(id));
 
-        if (!response.ok) {
-          const message = await response.text().catch(() => "");
+      await saveBackendOrder(orderedIds);
 
-          throw new Error(message || `Reorder failed: ${response.status}`);
-        }
-      }
+      // Keep ids of hidden items at the end so "Restore deleted" still works.
+      const fullOrder = [
+        ...orderedIds,
+        ...order.filter((id) => !orderedIds.includes(id)),
+      ];
 
-      setOrder(next);
+      await writeSetting(ORDER_KEY, fullOrder);
+
+      setOrder(fullOrder);
       setDraft(null);
       setIsReordering(false);
       setShowReorderConfirm(false);
@@ -988,12 +1072,22 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
       console.error("Could not save drawing order:", error);
 
       alert(
-        "Could not save the order to the backend. Your current reorder draft is preserved, so you can try saving again."
+        error instanceof Error
+          ? `${error.message}\n\nYour changes have not been committed. Your draft is kept, so you can try saving again.`
+          : "Could not save the order. Please try again."
       );
     } finally {
       setSavingReorder(false);
     }
-  }, [draft, savingReorder, itemsById, clearDrag]);
+  }, [
+    isReordering,
+    draft,
+    savingReorder,
+    itemsById,
+    order,
+    saveBackendOrder,
+    clearDrag,
+  ]);
 
   /* -------------------------------------------------------
      Delete flow: request -> confirm -> delete
@@ -1012,7 +1106,10 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
     async (id: string) => {
       const item = itemsById.get(id);
 
-      if (!item) return;
+      if (!item) {
+        setPendingDeleteId(null);
+        return;
+      }
 
       setDeleting(true);
 
@@ -1041,9 +1138,12 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
             previous.filter((upload) => upload.id !== id)
           );
         } else {
-          setHidden((previous) =>
-            previous.includes(id) ? previous : [...previous, id]
-          );
+          // Built-in image: save the "deleted" list on the server so every
+          // device hides it.
+          const nextHidden = hidden.includes(id) ? hidden : [...hidden, id];
+
+          await writeSetting(HIDDEN_KEY, nextHidden);
+          setHidden(nextHidden);
         }
 
         if (selectedImage === item.src) {
@@ -1067,7 +1167,7 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
         setDeleting(false);
       }
     },
-    [itemsById, selectedImage, releaseObjectUrl]
+    [itemsById, selectedImage, hidden, releaseObjectUrl]
   );
 
   const confirmDelete = useCallback(async () => {
@@ -1137,11 +1237,10 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
             ) : (
               <button
                 type="button"
-                className="drawings-reset"
-                onClick={() => void resetOrder()}
-                disabled={savingReorder}
+                className="drawings-reorder-btn"
+                onClick={closeViewAll}
               >
-                Reset
+                Done
               </button>
             )}
           </>
@@ -1188,26 +1287,27 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
                 : "Browse your drawings or choose Reorder to arrange them."}
             </p>
 
-            {isReordering ? (
+            <div className="drawings-bar-actions">
+              {hidden.length > 0 && !isReordering && (
+                <button
+                  type="button"
+                  className="drawings-reset"
+                  onClick={() => void restoreDeleted()}
+                >
+                  Restore deleted
+                </button>
+              )}
+
               <button
                 type="button"
                 className="drawings-reset"
-                onClick={() => {
-                  const reset = [
-                    ...defaultOrder.filter((id) => itemsById.has(id)),
-                    ...uploads
-                      .map((item) => item.id)
-                      .filter((id) => itemsById.has(id)),
-                  ];
-
-                  setDraft(reset);
-                  clearDrag();
-                }}
+                onClick={() => void resetOrder()}
+                disabled={savingReorder}
               >
-                Reset order
+                Reset
               </button>
-            ) : (
-              <div className="drawings-bar-actions">
+
+              {!isReordering && (
                 <button
                   type="button"
                   className="drawings-reset"
@@ -1215,18 +1315,8 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
                 >
                   Reorder
                 </button>
-
-                {hidden.length > 0 && (
-                  <button
-                    type="button"
-                    className="drawings-reset"
-                    onClick={restoreDeleted}
-                  >
-                    Restore deleted
-                  </button>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           <section
@@ -1252,7 +1342,10 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
                 key={item.id}
                 draggable={isReordering}
                 onDragStart={(event) => {
-                  if (!isReordering) return;
+                  if (!isReordering) {
+                    event.preventDefault();
+                    return;
+                  }
 
                   setDragIndex(index);
                   event.dataTransfer.effectAllowed = "move";
@@ -1301,15 +1394,17 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
                   <span className="drawing-card-overlay" />
                 </button>
 
-                <button
-                  type="button"
-                  className="drawing-remove"
-                  aria-label="Delete image"
-                  title="Delete"
-                  onClick={() => askDelete(item.id)}
-                >
-                  <img src={deleteIcon} alt="" draggable={false} />
-                </button>
+                {!isReordering && (
+                  <button
+                    type="button"
+                    className="drawing-remove"
+                    aria-label="Delete image"
+                    title="Delete"
+                    onClick={() => askDelete(item.id)}
+                  >
+                    <img src={deleteIcon} alt="" draggable={false} />
+                  </button>
+                )}
 
                 {isReordering && (
                   <span className="drawing-move">
@@ -1412,7 +1507,7 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
       {showReorderConfirm && (
         <ConfirmModal
           title="Save new image order?"
-          message="Are you sure you want to save this order? Confirming will save the gallery order and send the uploaded drawing IDs to the reorder API."
+          message="Are you sure you want to save this order? The reorder API is called only after you confirm."
           confirmText="Confirm"
           busy={savingReorder}
           onCancel={cancelSaveReorder}
