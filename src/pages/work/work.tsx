@@ -1307,7 +1307,7 @@ function Work({ onBackToHome }: WorkProps) {
                 }
               }}
             >
-              {showAll ? "Done" : "View all"}
+              {showAll ? "Close all" : "View all"}
             </button>
           )}
         </div>
