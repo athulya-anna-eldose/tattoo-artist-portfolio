@@ -47,7 +47,6 @@ function LogoIntro({ onComplete }: LogoIntroProps) {
 
       <div className="intro-topline">
         <span>AKHIL DAS</span>
-        <span>EST. IN ARTISTRY</span>
       </div>
 
       <div className="intro-stage">
@@ -76,9 +75,6 @@ function LogoIntro({ onComplete }: LogoIntroProps) {
       </div>
 
 
-      <div className="intro-bottomline">
-        <span>TATTOO ARTIST</span>
-      </div>
     </section>
   );
 }
