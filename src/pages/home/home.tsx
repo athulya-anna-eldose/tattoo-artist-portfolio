@@ -62,7 +62,6 @@ function Home({
               onClick={() => handleCategoryClick(title)}
             >
               {title}
-              <span className="button-arrow"/>
             </button>
           ))}
         </div>
