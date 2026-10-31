@@ -272,6 +272,10 @@
     padding: 65px 7%;
     background-position: 60% center;
   }
+    .hero-buttons {
+    width: 100%;
+    justify-content: flex-start;
+  }
 
   .home-overlay {
     background:
@@ -380,6 +384,14 @@
   .hero-signature span:last-child {
     font-size: 8px;
     letter-spacing: 2px;
+  }
+  .hero-buttons {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .secondary-button {
+    flex: 0 0 auto;
   }
 }
 

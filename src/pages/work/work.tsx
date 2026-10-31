@@ -1786,7 +1786,7 @@ function Work({ onBackToHome }: WorkProps) {
         <section className="wg-category-screen">
           <div className="wg-category-heading">
             <h1>
-              EXPLORE <em>THE WORK</em>
+              EXPLORE <em>MY WORKS</em>
             </h1>
           </div>
 
@@ -1811,7 +1811,7 @@ function Work({ onBackToHome }: WorkProps) {
                   <strong>{category.title}</strong>
                   <span className="wg-category-subtitle" />
                   <span className="wg-category-explore">
-                    EXPLORE WORK
+                   
                   </span>
                 </span>
               </button>
