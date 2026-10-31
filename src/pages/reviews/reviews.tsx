@@ -112,11 +112,7 @@ function Reviews({ onBackToHome }: ReviewsProps) {
           Real Stories<span>.</span>
         </h1>
 
-        <p>
-          Every tattoo has a story.
-          <br />
-          Here's what people have to say about their experience.
-        </p>
+        
       </header>
 
       <div className="reviews-carousel" ref={carouselRef}>
@@ -143,9 +139,7 @@ function Reviews({ onBackToHome }: ReviewsProps) {
                     <div className="review-glow" />
                   </div>
 
-                  <span className="review-number">
-                    REVIEW / {String(index + 1).padStart(2, "0")}
-                  </span>
+                 
                 </article>
               ))}
             </div>
@@ -154,8 +148,7 @@ function Reviews({ onBackToHome }: ReviewsProps) {
       </div>
 
       <div className="reviews-footer">
-        <span>THANK YOU FOR TRUSTING THE ART</span>
-        <span>EVERY PIECE MATTERS.</span>
+        <span>THANK YOU FOR TRUSTING ME</span>
       </div>
     </section>
   );
