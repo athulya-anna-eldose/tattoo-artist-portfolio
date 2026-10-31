@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent } from "react";
 import "./work.css";
-import cubeBackground from "../../assets/close-up-colorful-cube-pattern-with-black-background-generative-ai_958192-97660.avif";
+import cubeBackground from "../../assets/black-cubes-background-abstract.jpg";
 import deleteIcon from "../../assets/images.png";
 
 import tattoo1 from "../../assets/1.jpg";
