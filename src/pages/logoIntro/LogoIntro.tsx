@@ -75,14 +75,6 @@ function LogoIntro({ onComplete }: LogoIntroProps) {
         <span />
       </div>
 
-      <button
-        type="button"
-        className="intro-skip"
-        onClick={skipIntro}
-        aria-label="Skip intro and continue to home page"
-      >
-        SKIP INTRO <span>↗</span>
-      </button>
 
       <div className="intro-bottomline">
         <span>TATTOO ARTIST</span>
