@@ -46,13 +46,6 @@ function Home({
           </span>
         </h1>
 
-        <p className="hero-bio">
-          Every face tells a story. I specialise in{" "}
-          <strong>black &amp; grey realism</strong>, lifelike portraits, mini
-          portraits, custom designs and intricate dotwork. Your idea. My
-          artistry. <strong>Your story, etched in ink.</strong>
-        </p>
-
         <div className="hero-buttons">
           {categories.map((title) => (
             <button
