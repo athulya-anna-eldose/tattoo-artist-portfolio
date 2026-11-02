@@ -379,3 +379,68 @@ justify-content: flex-end;
     height: 48px;
   }
 }
+/* =========================================================
+   TABLET (561px – 1100px): Contact page
+   ========================================================= */
+@media (min-width: 561px) and (max-width: 1100px) {
+  .cp {
+    padding: 24px;
+  }
+
+  /* Back arrow, centred on the taller nav bar */
+  .cp__back {
+    top: 36px;
+    left: 24px;
+    width: 56px;
+    height: 56px;
+    padding: 14px;
+  }
+
+  .cp__nav {
+    height: 72px;
+    min-height: 72px;
+  }
+
+  .cp__brand {
+    font-size: 18px;
+  }
+
+  .cp__links a {
+    font-size: 17px;
+  }
+
+  /* Pill button in the nav */
+  .cp__pill {
+    min-height: 48px;
+    padding: 0 30px;
+    font-size: 17px;
+  }
+
+  .cp__hero {
+    padding-top: 5cqw;
+  }
+
+  .cp__hero h1 {
+    font-size: clamp(46px, 7.2cqw, 72px);
+  }
+
+  .cp__hero p {
+    margin-top: 18px;
+    font-size: 19px;
+  }
+
+  .cp__stage {
+    margin-top: 4cqw;
+  }
+
+  /* Contact icons */
+  .cp__icons {
+    margin-top: 4cqw;
+    gap: 22px;
+  }
+
+  .cp__icon {
+    width: 68px;
+    height: 68px;
+  }
+}

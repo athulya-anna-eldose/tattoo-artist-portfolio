@@ -3,6 +3,7 @@ import type { ChangeEvent, PointerEvent } from "react";
 import "./piercing.css";
 
 import deleteIcon from "../../assets/images.png";
+import { adminFetch, isAdmin } from "../../admin";
 
 import tattoo1 from "../../assets/1d (11).jpg";
 import tattoo2 from "../../assets/1d (3).jpg";
@@ -16,7 +17,7 @@ import tattoo9 from "../../assets/1d (13).jpg";
 import tattoo10 from "../../assets/1d (14).jpg";
 import tattoo11 from "../../assets/1d (15).jpg";
 import tattoo12 from "../../assets/1d (18).jpg";
-
+import { useBackStack } from "../../useBackStack";
 interface PiercingProps {
   onBackToHome: () => void;
 }
@@ -47,6 +48,74 @@ const API_ROOT = String(import.meta.env.VITE_API_URL ?? "").replace(
 );
 
 const API_URL = `${API_ROOT}/api/piercings`;
+
+/* ---------------------------------------------------------
+   Resilient fetch
+   Free hosting (Render, Railway, ...) puts the server to sleep and
+   takes 10-60 s to wake up. While it wakes, requests are slow or
+   answered with 502/503/504 (which also lack CORS headers, so the
+   browser reports them as "Failed to fetch"). We wait longer and
+   retry instead of showing an error straight away.
+   --------------------------------------------------------- */
+
+const REQUEST_TIMEOUT_MS = 45000;
+const MAX_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 2000;
+// While the error banner is visible, silently retry this often.
+const ERROR_RETRY_INTERVAL_MS = 10000;
+
+const sleep = (ms: number) =>
+  new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+
+const fetchWithRetry = async (
+  url: string,
+  init: RequestInit = {},
+  attempts: number = MAX_ATTEMPTS,
+  // Pass true for requests that change data (PUT/POST/DELETE) so the
+  // admin key header is added.
+  admin: boolean = false
+): Promise<Response> => {
+  let lastError: unknown = new Error("Request failed");
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const controller = new AbortController();
+    const timer = window.setTimeout(
+      () => controller.abort(),
+      REQUEST_TIMEOUT_MS
+    );
+
+    try {
+      const send = admin ? adminFetch : fetch;
+
+      const response = await send(url, {
+        ...init,
+        signal: controller.signal,
+      });
+
+      // Gateway errors mean the host is still waking up: try again.
+      if (
+        response.status === 502 ||
+        response.status === 503 ||
+        response.status === 504
+      ) {
+        throw new Error(`Server not ready (${response.status})`);
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error;
+    } finally {
+      window.clearTimeout(timer);
+    }
+
+    if (attempt < attempts - 1) {
+      // 2 s, 4 s, 8 s ...
+      await sleep(RETRY_BASE_DELAY_MS * 2 ** attempt);
+    }
+  }
+
+  throw lastError;
+};
 
 /**
  * Turns whatever the backend returns for one piercing into a full image URL.
@@ -119,7 +188,7 @@ const sameJson = (a: unknown, b: unknown) =>
   JSON.stringify(a) === JSON.stringify(b);
 
 const readSetting = async (key: string): Promise<string[] | null> => {
-  const response = await fetch(`${SETTINGS_BASE}/${key}`);
+  const response = await fetchWithRetry(`${SETTINGS_BASE}/${key}`);
 
   if (!response.ok) {
     throw new Error(`Could not read setting: ${response.status}`);
@@ -138,13 +207,18 @@ const readSetting = async (key: string): Promise<string[] | null> => {
 };
 
 const writeSetting = async (key: string, ids: string[]): Promise<void> => {
-  const response = await fetch(`${SETTINGS_BASE}/${key}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetchWithRetry(
+    `${SETTINGS_BASE}/${key}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ value: JSON.stringify(ids) }),
     },
-    body: JSON.stringify({ value: JSON.stringify(ids) }),
-  });
+    MAX_ATTEMPTS,
+    true
+  );
 
   if (!response.ok) {
     throw new Error(`Could not save setting: ${response.status}`);
@@ -292,6 +366,9 @@ function BackButton({
 /* ---------------- Gallery component ---------------- */
 
 function Piercing({ onBackToHome }: PiercingProps) {
+  // true only in the browser that has the admin key (your client)
+  const admin = isAdmin();
+
   const [selectedImage, setSelectedImage] = useState<Tattoo | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -302,6 +379,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
   const [draftOrder, setDraftOrder] = useState<string[]>([]);
   const [isReordering, setIsReordering] = useState(false);
   const [hidden, setHidden] = useState<string[]>(loadHidden);
+  const [restoring, setRestoring] = useState(false);
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
@@ -311,6 +389,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
   const [uploads, setUploads] = useState<UploadedImage[]>([]);
   const [uploadsReady, setUploadsReady] = useState(false);
+  const [slowLoad, setSlowLoad] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -369,7 +448,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
     try {
       const [response, serverOrder, serverHidden] = await Promise.all([
-        fetch(API_URL),
+        fetchWithRetry(API_URL),
         readSetting(ORDER_KEY).catch(() => null),
         readSetting(HIDDEN_KEY).catch(() => null),
       ]);
@@ -387,6 +466,9 @@ function Piercing({ onBackToHome }: PiercingProps) {
       // Do not change the screen while the user is in the middle of
       // reordering, uploading or deleting.
       if (silent && busyRef.current) return;
+
+      // The server answered properly: hide the error banner.
+      setLoadError(false);
 
       const loaded: UploadedImage[] = [];
 
@@ -425,7 +507,8 @@ function Piercing({ onBackToHome }: PiercingProps) {
     } catch (error) {
       console.error("Could not sync piercings with the backend:", error);
 
-      if (!silent) setLoadError(true);
+      // Silent background retries keep any banner that is already showing.
+      setLoadError(true);
     } finally {
       setUploadsReady(true);
     }
@@ -435,6 +518,32 @@ function Piercing({ onBackToHome }: PiercingProps) {
   useEffect(() => {
     void syncFromServer(false);
   }, [syncFromServer, reloadKey]);
+
+  // Show a friendly "waking up" note only if the first load is slow.
+  useEffect(() => {
+    if (uploadsReady) {
+      setSlowLoad(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => setSlowLoad(true), 3000);
+
+    return () => window.clearTimeout(timer);
+  }, [uploadsReady]);
+
+  // While the error banner is showing, keep retrying quietly so it
+  // disappears by itself as soon as the server is awake.
+  useEffect(() => {
+    if (!loadError) return;
+
+    const interval = window.setInterval(() => {
+      if (busyRef.current) return;
+
+      void syncFromServer(true);
+    }, ERROR_RETRY_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [loadError, syncFromServer]);
 
   // Pick up changes made on other devices.
   useEffect(() => {
@@ -787,10 +896,25 @@ function Piercing({ onBackToHome }: PiercingProps) {
         formData.append("file", file);
         formData.append("name", file.name.replace(/\.[^/.]+$/, ""));
 
-        const response = await fetch(`${API_URL}/upload`, {
-          method: "POST",
-          body: formData,
-        });
+        // Uploads are NOT retried automatically (a retry could create
+        // duplicates), but they wait long enough for a sleeping server.
+        const controller = new AbortController();
+        const timer = window.setTimeout(
+          () => controller.abort(),
+          REQUEST_TIMEOUT_MS * 2
+        );
+
+        let response: Response;
+
+        try {
+          response = await adminFetch(`${API_URL}/upload`, {
+            method: "POST",
+            body: formData,
+            signal: controller.signal,
+          });
+        } finally {
+          window.clearTimeout(timer);
+        }
 
         if (!response.ok) {
           const message = await response.text().catch(() => "");
@@ -915,13 +1039,18 @@ function Piercing({ onBackToHome }: PiercingProps) {
     // are sent to the reorder API.
     if (backendIds.length === 0) return;
 
-    const response = await fetch(`${API_URL}/reorder`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetchWithRetry(
+      `${API_URL}/reorder`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(backendIds),
       },
-      body: JSON.stringify(backendIds),
-    });
+      MAX_ATTEMPTS,
+      true
+    );
 
     if (!response.ok) {
       throw new Error(`Could not save the order (${response.status}).`);
@@ -994,6 +1123,10 @@ function Piercing({ onBackToHome }: PiercingProps) {
   };
 
   const restoreDeleted = async () => {
+    if (restoring) return;
+
+    setRestoring(true);
+
     try {
       await writeSetting(HIDDEN_KEY, []);
       setHidden([]);
@@ -1001,6 +1134,8 @@ function Piercing({ onBackToHome }: PiercingProps) {
       console.error("Could not restore deleted images:", error);
 
       window.alert("Could not restore the deleted images. Please try again.");
+    } finally {
+      setRestoring(false);
     }
   };
 
@@ -1030,7 +1165,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
       }
 
       try {
-        const response = await fetch(`${API_URL}/${item.backendId}`, {
+        const response = await adminFetch(`${API_URL}/${item.backendId}`, {
           method: "DELETE",
         });
 
@@ -1160,7 +1295,17 @@ function Piercing({ onBackToHome }: PiercingProps) {
     dragDistance.current = 0;
     draggedRef.current = false;
   };
-
+  // Browser Back closes: lightbox -> View all -> page
+  useBackStack((showAll ? 1 : 0) + (selectedImage ? 1 : 0), () => {
+    if (selectedImageRef.current) {
+      closeLightbox();
+    } else if (showAll) {
+      setPendingDeleteId(null);
+      setShowAll(false);
+      setIsReordering(false);
+      setDraftOrder([]);
+    }
+  });
   /* ---------------- Render ---------------- */
 
   return (
@@ -1197,14 +1342,16 @@ function Piercing({ onBackToHome }: PiercingProps) {
         <div className="wg-actions">
           {!isReordering ? (
             <>
-              <button
-                type="button"
-                className="wg-upload-btn"
-                onClick={openFilePicker}
-                disabled={uploading}
-              >
-                Upload
-              </button>
+              {admin && (
+                <button
+                  type="button"
+                  className="wg-upload-btn"
+                  onClick={openFilePicker}
+                  disabled={uploading}
+                >
+                  Upload
+                </button>
+              )}
 
               <button
                 type="button"
@@ -1250,9 +1397,18 @@ function Piercing({ onBackToHome }: PiercingProps) {
         onChange={handleFiles}
       />
 
+      {slowLoad && !uploadsReady && !loadError && (
+        <div className="wg-status" role="status">
+          <p>Waking up the server. This can take up to a minute...</p>
+        </div>
+      )}
+
       {loadError && (
         <div className="wg-status" role="status">
-          <p>Could not load uploaded images. The server may be waking up.</p>
+          <p>
+            Could not load uploaded images. The server may be waking up.
+            Retrying automatically...
+          </p>
 
           <button
             type="button"
@@ -1269,23 +1425,34 @@ function Piercing({ onBackToHome }: PiercingProps) {
             <p>
               {isReordering
                 ? "Drag images to rearrange them, then press Save."
-                : "Click an image to view it. Use Reorder to change the order."}
+                : admin
+                  ? "Click an image to view it. Use Reorder to change the order."
+                  : "Click an image to view it."}
             </p>
 
             <div className="wg-all-toolbar-actions">
-              {hidden.length > 0 && !isReordering && (
+              {admin && (
+                <button
+                  type="button"
+                  className="wg-all-reset"
+                  onClick={() => void resetOrder()}
+                >
+                  Reset order
+                </button>
+              )}
+
+              {admin && hidden.length > 0 && !isReordering && (
                 <button
                   type="button"
                   className="wg-all-reset"
                   onClick={() => void restoreDeleted()}
+                  disabled={restoring}
                 >
-                  Restore deleted
+                  {restoring ? "Restoring..." : "Restore deleted"}
                 </button>
               )}
 
-            
-
-              {!isReordering && (
+              {admin && !isReordering && (
                 <button
                   type="button"
                   className="wg-all-reset"
@@ -1366,7 +1533,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
                 <span className="wg-all-number">{index + 1}</span>
 
-                {!isReordering && (
+                {admin && !isReordering && (
                   <button
                     type="button"
                     className="wg-all-remove"

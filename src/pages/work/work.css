@@ -1945,3 +1945,126 @@ section.wg-page .wg-actions button.wg-upload-btn:hover {
     font-size: 17px;
   }
 }
+/* =========================================================
+   TABLET (561px – 1100px): make buttons bigger, stop overlap
+   ========================================================= */
+@media (min-width: 561px) and (max-width: 1100px) {
+  /* Back arrow */
+  section.wg-page > button.wg-back {
+    width: 56px !important;
+    height: 56px !important;
+    padding: 14px !important;
+  }
+
+  /* Upload / View all / Done / Cancel / Save */
+  section.wg-page > .wg-actions {
+    gap: 14px !important;
+  }
+
+  section.wg-page .wg-actions button,
+  section.wg-page .wg-actions button.wg-upload-btn,
+  section.wg-page .wg-actions button.wg-viewall {
+    height: 56px !important;
+    min-height: 56px !important;
+    padding: 0 34px !important;
+    border-radius: 28px !important;
+    font-size: 16px !important;
+    letter-spacing: 3px !important;
+    line-height: 1 !important;
+  }
+
+  /* "View all" panel: start below the big fixed buttons */
+  section.wg-page .wg-all-view {
+    padding-top: 90px !important;
+  }
+
+  section.wg-page .wg-all-toolbar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+    margin-bottom: 20px !important;
+  }
+
+  section.wg-page .wg-all-toolbar p {
+    font-size: 14px !important;
+  }
+
+  section.wg-page .wg-all-toolbar-actions {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+
+  /* Restore deleted / Reorder (and Reset order on the other pages) */
+  section.wg-page .wg-all-reset {
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 0 24px !important;
+    border-radius: 22px !important;
+    font-size: 13px !important;
+    letter-spacing: 2px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+}
+/* =========================================================
+   TABLET (561px – 1100px): category screen (4 cards)
+   ========================================================= */
+@media (min-width: 561px) and (max-width: 1100px) {
+  section.wg-page .wg-category-screen {
+    height: auto !important;
+    min-height: calc(100svh - var(--wg-header)) !important;
+    padding: 110px 6% 60px !important;
+    overflow: visible !important;
+  }
+
+  section.wg-page .wg-category-heading {
+    margin-bottom: 40px !important;
+  }
+
+  section.wg-page .wg-category-heading h1 {
+    font-size: 40px !important;
+    letter-spacing: 5px !important;
+  }
+
+  /* 2 x 2 grid with bigger cards */
+  section.wg-page .wg-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 24px !important;
+    max-width: 760px !important;
+  }
+
+  section.wg-page .wg-category-card,
+  section.wg-page .wg-category-card-1,
+  section.wg-page .wg-category-card-2,
+  section.wg-page .wg-category-card-3,
+  section.wg-page .wg-category-card-4 {
+    aspect-ratio: 1 / 1 !important;
+  }
+
+  section.wg-page .wg-category-number {
+    top: 18px !important;
+    left: 18px !important;
+    font-size: 14px !important;
+  }
+
+  section.wg-page .wg-category-content {
+    right: 20px !important;
+    bottom: 22px !important;
+    left: 20px !important;
+    gap: 10px !important;
+  }
+
+  section.wg-page .wg-category-content > strong {
+    font-size: 22px !important;
+    line-height: 1.3 !important;
+  }
+
+  section.wg-page .wg-category-subtitle {
+    font-size: 13px !important;
+  }
+
+  section.wg-page .wg-category-explore {
+    font-size: 11px !important;
+    letter-spacing: 2px !important;
+  }
+}

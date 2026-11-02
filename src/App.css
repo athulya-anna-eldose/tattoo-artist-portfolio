@@ -161,3 +161,27 @@ main {
 .app:has(.logo-intro) main {
   pointer-events: none;
 }
+/* =========================================================
+   TABLET (561px – 1100px): bigger navbar
+   Height stays about the same so other pages' offsets still match
+   ========================================================= */
+@media (min-width: 561px) and (max-width: 1100px) {
+  .navbar {
+    min-height: 86px;
+    padding: 18px 5%;
+  }
+
+  .logo {
+    font-size: 28px;
+    letter-spacing: 4px;
+  }
+
+  .nav-links {
+    gap: 36px;
+  }
+
+  .nav-links button {
+    padding: 10px 4px;
+    font-size: 20px;
+  }
+}

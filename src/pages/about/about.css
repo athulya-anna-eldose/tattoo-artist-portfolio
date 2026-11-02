@@ -1,0 +1,281 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
+
+/* =========================
+   ABOUT PAGE
+========================= */
+
+.about {
+  width: 100%;
+  min-height: 100vh;
+  background: #111;
+  color: #fff;
+  font-family: "Poppins", sans-serif;
+}
+
+/* ---------- Photo on top ---------- */
+
+.about-photo {
+  position: relative;
+  width: 100%;
+  height: clamp(320px, 62vh, 660px);
+  overflow: hidden;
+  background: #0b0b0b;
+}
+
+.about-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  user-select: none;
+}
+
+/* Fades the photo into the dark page below it. */
+
+.about-photo-shade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+
+  background: linear-gradient(
+    180deg,
+    rgba(17, 17, 17, 0.25) 0%,
+    rgba(17, 17, 17, 0) 35%,
+    rgba(17, 17, 17, 0.75) 80%,
+    #111 100%
+  );
+}
+
+.about-back {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 40px;
+  height: 40px;
+  padding: 9px;
+
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.about-back:hover {
+  background: #fff;
+  color: #111;
+  transform: translateX(-2px);
+}
+
+/* ---------- Description below the photo ---------- */
+
+.about-body {
+  position: relative;
+  z-index: 1;
+
+  width: 100%;
+  max-width: 780px;
+  margin: -70px auto 0;
+  padding: 0 24px 90px;
+
+  animation: aboutFadeIn 0.7s ease both;
+}
+
+.about-eyebrow {
+  margin: 0 0 16px;
+
+  color: #d7ad69;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 5px;
+}
+
+.about-body h1 {
+  margin: 0 0 8px;
+
+  font-size: clamp(34px, 5vw, 56px);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -1.2px;
+}
+
+.about-gradient {
+  background: linear-gradient(90deg, #f0322c 0%, #d4145a 50%, #9b63dc 100%);
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.about-role {
+  margin: 0 0 28px;
+
+  color: #f5f2ec;
+  font-size: clamp(19px, 2.6vw, 27px);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.4px;
+}
+
+.about-text {
+  margin: 0 0 18px;
+
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 15px;
+  line-height: 1.95;
+}
+
+.about-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  margin: 30px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about-tags li {
+  padding: 9px 20px;
+
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50px;
+
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.about-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  margin-top: 38px;
+}
+
+.about-button {
+  min-height: 46px;
+  padding: 0 24px;
+
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50px;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.about-button:hover {
+  background: #fff;
+  color: #111;
+  border-color: #fff;
+  transform: translateY(-2px);
+}
+
+.about-button--solid {
+  background: #d7ad69;
+  color: #111;
+  border-color: #d7ad69;
+}
+
+.about-button--solid:hover {
+  background: #e4c185;
+  border-color: #e4c185;
+}
+
+/* ---------- Animation ---------- */
+
+@keyframes aboutFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 600px) {
+  .about-photo {
+    height: clamp(280px, 52vh, 420px);
+  }
+
+  .about-back {
+    top: 16px;
+    left: 16px;
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+  }
+
+  .about-body {
+    margin-top: -50px;
+    padding: 0 20px 70px;
+  }
+
+  .about-eyebrow {
+    font-size: 9px;
+    letter-spacing: 3.5px;
+  }
+
+  .about-text {
+    font-size: 13px;
+    line-height: 1.9;
+  }
+
+  .about-tags li {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+
+  .about-actions {
+    gap: 9px;
+  }
+
+  .about-button {
+    min-height: 43px;
+    padding: 0 18px;
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-body {
+    animation: none;
+  }
+
+  .about-back,
+  .about-button {
+    transition: none;
+  }
+}

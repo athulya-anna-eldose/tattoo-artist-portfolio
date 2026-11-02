@@ -808,6 +808,106 @@
 }
 
 /* ==========================================
+   TABLET LAYOUT (tablets in portrait and landscape)
+   Same idea as the phone layout: the two marquee rows get a fixed
+   height and sit in the middle of the screen, so the page is filled
+   and there is no big empty area under the cards.
+   (This block must stay AFTER the 900px block above.)
+   ========================================== */
+
+@media (min-width: 561px) and (max-width: 1100px) {
+  .drawings-page {
+    --card-gap: 16px;
+
+    /* Row height follows the screen height.
+       Cards are 4:5, so card width = row height x 0.8.
+       Make the cards bigger or smaller by changing the middle value. */
+    --row-h: clamp(200px, 30vh, 420px);
+
+    display: flex;
+    flex-direction: column;
+
+    min-height: calc(100vh - var(--draw-header));
+    min-height: calc(100dvh - var(--draw-header));
+
+    /* The title sits well below the Back / Upload / View all buttons,
+       so they can never touch or overlap it. */
+    padding: 104px 0 28px;
+  }
+
+  /* Back arrow (top left) */
+  .drawings-page .drawings-back-btn {
+    top: 20px;
+    left: 28px;
+
+    width: 50px;
+    height: 50px;
+    padding: 11px;
+  }
+
+  /* Upload / View all / Reorder / Cancel / Save (top right) */
+  .drawings-page .drawings-actions {
+    top: 20px;
+    right: 28px;
+    gap: 14px;
+  }
+
+  .drawings-page .drawings-upload-btn,
+  .drawings-page .drawings-reorder-btn,
+  .drawings-page .drawings-save-btn {
+    height: 50px;
+    padding: 0 30px;
+
+    border-radius: 25px;
+    font-size: 14px;
+    letter-spacing: 2.5px;
+  }
+
+  /* Title: centred, sized for tablets */
+  .drawings-header {
+    flex: 0 0 auto;
+    margin-bottom: 40px;
+  }
+
+  .drawings-header h1 {
+    font-size: clamp(38px, 6vw, 56px);
+    letter-spacing: 8px;
+
+    /* same as the letter-spacing, so the word is truly centred */
+    padding-left: 8px;
+  }
+
+  .drawings-marquee {
+    flex: 1 1 auto;
+    min-height: 0;
+    justify-content: center;
+  }
+
+  .marquee-row {
+    flex: 0 0 auto;
+    height: var(--row-h);
+  }
+
+  .marquee-track {
+    height: var(--row-h);
+  }
+
+  .marquee-card {
+    width: calc(var(--row-h) * 0.8);
+    height: var(--row-h);
+  }
+
+  /* View all grid: a little more breathing room on tablets */
+  .drawings-gallery {
+    padding: 0 28px;
+  }
+
+  .drawings-reorder-bar {
+    padding: 0 28px;
+  }
+}
+
+/* ==========================================
    MOBILE
    ========================================== */
 

@@ -9,6 +9,7 @@ interface HomeProps {
   onDrawingsClick: () => void;
   onReviewsClick: () => void;
   onContactClick: () => void;
+  onAboutClick: () => void;
 }
 
 const categories = ["Piercing", "Tattoo", "Drawings"];
@@ -18,6 +19,7 @@ function Home({
   onPiercingClick,
   onDrawingsClick,
   onReviewsClick,
+  onAboutClick
 }: HomeProps) {
   const handleCategoryClick = (title: string) => {
     if (title === "Piercing") {
@@ -68,10 +70,9 @@ function Home({
         </button>
       </div>
 
-      <div className="hero-signature">
-        <span>AKHIL DAS</span>
-        <span>TATTOO ARTIST</span>
-      </div>
+      <button type="button" className="about-cta" onClick={onAboutClick}>
+  <span>Know more about me?</span>
+</button>
     </section>
   );
 }

@@ -1,4 +1,3 @@
-
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
 
 /* =========================
@@ -6,11 +5,16 @@
 ========================= */
 
 .home {
+  /* How far the photo is moved from left to right.
+     0% = original position, 4% = moved right (safe maximum is about 5%).
+     Increase or decrease this one value to adjust the photo. */
+  --hero-shift: 4%;
+
   position: relative;
   isolation: isolate;
 
   display: flex;
-  align-items: center;
+  align-items: flex-end;
 
   width: 100%;
   min-height: calc(100svh - 74px);
@@ -27,7 +31,26 @@
   font-family: "Poppins", sans-serif;
 }
 
-/* Dark gradient over the image */
+/* Zoomed photo layer, moved from left to right */
+
+.home::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+
+  background-image: inherit;
+  background-size: cover;
+  background-position: center 35%;
+  background-repeat: no-repeat;
+
+  /* scale() zooms in; translateX() moves the photo to the right.
+     The zoom is larger than the shift, so no empty strip shows on the left. */
+  transform: translateX(var(--hero-shift)) scale(1.12);
+  transform-origin: 50% 40%;
+}
+
+/* Light gradient over the image (just enough to support the text) */
 
 .home-overlay {
   position: absolute;
@@ -38,17 +61,11 @@
   background:
     linear-gradient(
       90deg,
-      rgba(0, 0, 0, 0.94) 0%,
-      rgba(0, 0, 0, 0.82) 32%,
-      rgba(0, 0, 0, 0.48) 60%,
-      rgba(0, 0, 0, 0.16) 100%
+      rgba(0, 0, 0, 0.6) 0%,
+      rgba(0, 0, 0, 0.35) 35%,
+      rgba(0, 0, 0, 0) 65%
     ),
-    linear-gradient(
-      0deg,
-      rgba(0, 0, 0, 0.55) 0%,
-      transparent 35%,
-      rgba(0, 0, 0, 0.15) 100%
-    );
+    linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0%, transparent 30%);
 }
 
 /* =========================
@@ -132,7 +149,6 @@
   gap: 12px;
 }
 
-
 .secondary-button {
   display: inline-flex;
   align-items: center;
@@ -159,14 +175,6 @@
     border-color 0.25s ease,
     transform 0.25s ease;
 }
-
-.secondary-button:hover {
-  background: #fff;
-  color: #111;
-  border-color: #fff;
-  transform: translateY(-2px);
-}
-
 
 .secondary-button:hover {
   background: #fff;
@@ -216,13 +224,15 @@
 }
 
 /* =========================
-   BOTTOM SIGNATURE
+   BOTTOM RIGHT: SIGNATURE + "KNOW MORE ABOUT ME?"
 ========================= */
+
+/* The signature now sits just above the button. */
 
 .hero-signature {
   position: absolute;
   right: 8%;
-  bottom: 28px;
+  bottom: 92px;
   z-index: 1;
 
   display: flex;
@@ -244,6 +254,55 @@
   color: rgba(255, 255, 255, 0.65);
   font-size: 9px;
   letter-spacing: 3px;
+}
+
+.about-cta {
+  position: absolute;
+  right: 8%;
+  bottom: 28px;
+  z-index: 2;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+
+  min-height: 46px;
+  padding: 0 22px;
+
+  background: rgba(8, 8, 8, 0.55);
+  color: #fff;
+  border: 1px solid rgba(215, 173, 105, 0.85);
+  border-radius: 50px;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease,
+    transform 0.25s ease;
+}
+
+.about-cta:hover {
+  background: #d7ad69;
+  color: #111;
+  border-color: #d7ad69;
+  transform: translateY(-2px);
+}
+
+.about-cta-arrow {
+  font-size: 17px;
+  transition: transform 0.25s ease;
+}
+
+.about-cta:hover .about-cta-arrow {
+  transform: translateX(4px);
 }
 
 /* =========================
@@ -268,11 +327,18 @@
 
 @media (max-width: 860px) {
   .home {
+    --hero-shift: 3%;
+
     min-height: calc(100svh - 65px);
-    padding: 65px 7%;
-    background-position: 60% center;
+    padding: 65px 7% 80px;
   }
-    .hero-buttons {
+
+  .home::before {
+    background-position: 40% center;
+    transform-origin: 40% 40%;
+  }
+
+  .hero-buttons {
     width: 100%;
     justify-content: flex-start;
   }
@@ -281,14 +347,14 @@
     background:
       linear-gradient(
         90deg,
-        rgba(0, 0, 0, 0.92),
-        rgba(0, 0, 0, 0.65) 65%,
-        rgba(0, 0, 0, 0.35)
+        rgba(0, 0, 0, 0.6),
+        rgba(0, 0, 0, 0.4) 65%,
+        rgba(0, 0, 0, 0.15)
       ),
       linear-gradient(
         0deg,
-        rgba(0, 0, 0, 0.5),
-        transparent 60%
+        rgba(0, 0, 0, 0.25),
+        transparent 50%
       );
   }
 
@@ -310,23 +376,29 @@
 ========================= */
 
 @media (max-width: 480px) {
-  .home {
+.home {
+    --hero-shift: 2%;
+
     min-height: calc(100svh - 60px);
-    padding: 55px 6% 90px;
-    background-position: 62% center;
+    padding: 55px 6% 80px;   /* was: 55px 6% 150px */
+  }
+
+  .home::before {
+    background-position: 45% center;
+    transform-origin: 45% 40%;
   }
 
   .home-overlay {
     background:
       linear-gradient(
         90deg,
-        rgba(0, 0, 0, 0.91),
-        rgba(0, 0, 0, 0.73)
+        rgba(0, 0, 0, 0.6),
+        rgba(0, 0, 0, 0.45)
       ),
       linear-gradient(
         0deg,
-        rgba(0, 0, 0, 0.55),
-        transparent 70%
+        rgba(0, 0, 0, 0.3),
+        transparent 60%
       );
   }
 
@@ -356,10 +428,13 @@
   }
 
   .hero-buttons {
+    width: 100%;
     gap: 9px;
+    justify-content: flex-start;
   }
 
   .secondary-button {
+    flex: 0 0 auto;
     min-height: 43px;
     gap: 12px;
     padding: 0 12px;
@@ -373,7 +448,7 @@
 
   .hero-signature {
     right: 6%;
-    bottom: 20px;
+    bottom: 76px;
   }
 
   .hero-signature span:first-child {
@@ -385,13 +460,13 @@
     font-size: 8px;
     letter-spacing: 2px;
   }
-  .hero-buttons {
-    width: 100%;
-    justify-content: flex-start;
-  }
 
-  .secondary-button {
-    flex: 0 0 auto;
+  .about-cta {
+    right: 6%;
+    bottom: 20px;
+    min-height: 42px;
+    padding: 0 16px;
+    font-size: 12px;
   }
 }
 
@@ -406,7 +481,90 @@
 
   .secondary-button,
   .button-arrow,
-  .reviews-link {
+  .reviews-link,
+  .about-cta,
+  .about-cta-arrow {
     transition: none;
+  }
+}
+/* =========================================================
+   TABLET (561px – 1100px): bigger buttons and text
+   ========================================================= */
+@media (min-width: 561px) and (max-width: 1100px) {
+  .home {
+    padding: 70px 6% 140px;
+  }
+
+  .hero-content {
+    max-width: 640px;
+  }
+
+  .hero-eyebrow {
+    font-size: 14px;
+    letter-spacing: 6px;
+  }
+
+  .hero-bio {
+    max-width: 600px;
+    font-size: 18px;
+    line-height: 1.9;
+  }
+
+  /* Piercing / Tattoo / Drawings */
+  .hero-buttons {
+    gap: 16px;
+  }
+
+  .secondary-button {
+    min-height: 60px;
+    gap: 16px;
+    padding: 0 32px;
+    border-radius: 30px;
+    font-size: 18px;
+  }
+
+  .button-arrow {
+    font-size: 22px;
+  }
+
+  /* Read Client Reviews */
+  .reviews-link {
+    gap: 12px;
+    margin-top: 30px;
+    padding-bottom: 8px;
+    font-size: 18px;
+  }
+
+  .reviews-link span {
+    font-size: 24px;
+  }
+
+  /* Signature + Know more about me? */
+  .hero-signature {
+    right: 6%;
+    bottom: 120px;
+  }
+
+  .hero-signature span:first-child {
+    font-size: 16px;
+    letter-spacing: 5px;
+  }
+
+  .hero-signature span:last-child {
+    font-size: 12px;
+    letter-spacing: 3px;
+  }
+
+  .about-cta {
+    right: 6%;
+    bottom: 32px;
+    min-height: 60px;
+    gap: 14px;
+    padding: 0 32px;
+    font-size: 18px;
+  }
+
+  .about-cta-arrow {
+    font-size: 22px;
   }
 }

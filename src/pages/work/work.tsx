@@ -3,6 +3,7 @@ import type { PointerEvent } from "react";
 import "./work.css";
 import cubeBackground from "../../assets/black-cubes-background-abstract.jpg";
 import deleteIcon from "../../assets/images.png";
+import { adminFetch, isAdmin } from "../../admin";
 
 import tattoo1 from "../../assets/1.jpg";
 import tattoo2 from "../../assets/2.jpg";
@@ -43,7 +44,7 @@ import tattoo33 from "../../assets/4p.jpg";
 import tattoo34 from "../../assets/5p.jpg";
 import tattoo35 from "../../assets/6p.jpg";
 import tattoo36 from "../../assets/7p.jpg";
-
+import { useBackStack } from "../../useBackStack";
 interface WorkProps {
   onBackToHome: () => void;
 }
@@ -68,6 +69,20 @@ interface Category {
 }
 
 const categories: Category[] = [
+    {
+    title: "Black & Grey",
+    images: [
+      tattoo10, tattoo11, tattoo12, tattoo13, tattoo14,
+      tattoo15, tattoo16, tattoo17, tattoo18,
+    ],
+  },
+    {
+    title: "Portraits & Mini Potraits",
+    images: [
+      tattoo30, tattoo31, tattoo32, tattoo33,
+      tattoo34, tattoo35, tattoo36,
+    ],
+  },
   {
     title: "Minimal Line Works",
     images: [
@@ -75,13 +90,7 @@ const categories: Category[] = [
       tattoo6, tattoo7, tattoo8, tattoo9,
     ],
   },
-  {
-    title: "Black & Grey",
-    images: [
-      tattoo10, tattoo11, tattoo12, tattoo13, tattoo14,
-      tattoo15, tattoo16, tattoo17, tattoo18,
-    ],
-  },
+
   {
     title: "Healed Works",
     images: [
@@ -89,13 +98,7 @@ const categories: Category[] = [
       tattoo24, tattoo25, tattoo26, tattoo27, tattoo28, tattoo29,
     ],
   },
-  {
-    title: "Portraits & Mini Potraits",
-    images: [
-      tattoo30, tattoo31, tattoo32, tattoo33,
-      tattoo34, tattoo35, tattoo36,
-    ],
-  },
+
 ];
 
 const baseByCategory: Record<string, Tattoo[]> = {};
@@ -249,7 +252,7 @@ const readSetting = async (key: string): Promise<string[] | null> => {
 };
 
 const writeSetting = async (key: string, ids: string[]): Promise<void> => {
-  const response = await fetch(`${SETTINGS_BASE}/${key}`, {
+  const response = await adminFetch(`${SETTINGS_BASE}/${key}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -473,6 +476,9 @@ function ConfirmDialog({
 }
 
 function Work({ onBackToHome }: WorkProps) {
+  // true only in the browser that has the admin key (your client)
+  const admin = isAdmin();
+
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<Tattoo | null>(null);
   const [isClosing, setIsClosing] = useState(false);
@@ -1053,7 +1059,7 @@ function Work({ onBackToHome }: WorkProps) {
 
     if (orderedBackendIds.length === 0) return;
 
-    const response = await fetch(`${API_URL}/reorder`, {
+    const response = await adminFetch(`${API_URL}/reorder`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(orderedBackendIds),
@@ -1086,6 +1092,8 @@ function Work({ onBackToHome }: WorkProps) {
     }));
   };
 
+  // Kept for future use (not shown in the UI right now).
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const resetOrder = async () => {
     if (!activeCategory || isSavingReorder) return;
 
@@ -1203,7 +1211,7 @@ function Work({ onBackToHome }: WorkProps) {
         formData.append("name", file.name);
         formData.append("description", category);
 
-        const response = await fetch(`${API_URL}/upload`, {
+        const response = await adminFetch(`${API_URL}/upload`, {
           method: "POST",
           body: formData,
         });
@@ -1293,7 +1301,7 @@ function Work({ onBackToHome }: WorkProps) {
       }
 
       try {
-        const response = await fetch(
+        const response = await adminFetch(
           `${API_URL}/${uploadedItem.backendId}`,
           {
             method: "DELETE",
@@ -1481,6 +1489,15 @@ function Work({ onBackToHome }: WorkProps) {
 
     return offset;
   };
+    // Browser Back closes: lightbox -> View all -> category -> page
+  useBackStack(
+    (activeCategory ? 1 : 0) + (showAll ? 1 : 0) + (selectedImage ? 1 : 0),
+    () => {
+      if (selectedImageRef.current) closeLightbox();
+      else if (showAll) requestCloseAll();
+      else if (activeCategory) backToCategories();
+    }
+  );
 
   return (
     <section className="wg-page">
@@ -1549,14 +1566,16 @@ function Work({ onBackToHome }: WorkProps) {
             </>
           ) : (
             <>
-              <button
-                type="button"
-                className="wg-upload-btn"
-                onClick={openFilePicker}
-                disabled={isUploading}
-              >
-                Upload
-              </button>
+              {admin && (
+                <button
+                  type="button"
+                  className="wg-upload-btn"
+                  onClick={openFilePicker}
+                  disabled={isUploading}
+                >
+                  Upload
+                </button>
+              )}
 
               {(filteredTattoos.length > 0 || hiddenIds.length > 0) && (
                 <button
@@ -1629,11 +1648,13 @@ function Work({ onBackToHome }: WorkProps) {
             <p>
               {isReordering
                 ? "Drag images to rearrange them, then press Save."
-                : "Click an image to open it in the gallery. Use Reorder to change the order."}
+                : admin
+                  ? "Click an image to open it in the gallery. Use Reorder to change the order."
+                  : "Click an image to open it in the gallery."}
             </p>
 
             <div className="wg-all-toolbar-actions">
-              {hiddenIds.length > 0 && !isReordering && (
+              {admin && hiddenIds.length > 0 && !isReordering && (
                 <button
                   type="button"
                   className="wg-all-reset"
@@ -1643,9 +1664,7 @@ function Work({ onBackToHome }: WorkProps) {
                 </button>
               )}
 
-             
-
-              {!isReordering && (
+              {admin && !isReordering && (
                 <button
                   type="button"
                   className="wg-all-reset"
@@ -1729,7 +1748,7 @@ function Work({ onBackToHome }: WorkProps) {
 
                 <span className="wg-all-number">{index + 1}</span>
 
-                {!isReordering && (
+                {admin && !isReordering && (
                   <button
                     type="button"
                     className="wg-all-remove"

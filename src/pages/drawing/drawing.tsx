@@ -10,7 +10,7 @@ import type { CSSProperties, ChangeEvent, ReactNode } from "react";
 import "./drawing.css";
 
 import deleteIcon from "../../assets/images.png";
-
+import { adminFetch, isAdmin } from "../../admin";
 import tattoo1 from "../../assets/1d (11).jpg";
 import tattoo2 from "../../assets/1d (3).jpg";
 import tattoo3 from "../../assets/1d (4).jpg";
@@ -23,6 +23,7 @@ import tattoo9 from "../../assets/1d (13).jpg";
 import tattoo10 from "../../assets/1d (14).jpg";
 import tattoo11 from "../../assets/1d (15).jpg";
 import tattoo12 from "../../assets/1d (18).jpg";
+import { useBackStack } from "../../useBackStack";
 
 const drawings = [
   tattoo1,
@@ -162,7 +163,7 @@ const readSetting = async (key: string): Promise<string[] | null> => {
 };
 
 const writeSetting = async (key: string, ids: string[]): Promise<void> => {
-  const response = await fetch(`${SETTINGS_BASE}/${key}`, {
+  const response = await adminFetch(`${SETTINGS_BASE}/${key}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -428,6 +429,9 @@ const MarqueeRow = memo(function MarqueeRow({
    --------------------------------------------------------- */
 
 export default function Drawings({ onBackToHome }: DrawingsProps) {
+  // true only in the browser that has the admin key (your client)
+  const admin = isAdmin();
+
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const [view, setView] = useState<ViewMode>("marquee");
@@ -818,7 +822,7 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
       // Only uploaded drawings are sent to the reorder API.
       if (backendIds.length === 0) return;
 
-      const response = await fetch(`${API_BASE}/reorder`, {
+      const response = await adminFetch(`${API_BASE}/reorder`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -932,7 +936,7 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
         let response: Response;
 
         try {
-          response = await fetch(`${API_BASE}/upload`, {
+          response = await adminFetch(`${API_BASE}/upload`, {
             method: "POST",
             body: formData,
           });
@@ -1122,7 +1126,7 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
             return;
           }
 
-          const response = await fetch(`${API_BASE}/${item.backendId}`, {
+          const response = await adminFetch(`${API_BASE}/${item.backendId}`, {
             method: "DELETE",
           });
 
@@ -1186,7 +1190,15 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
   /* -------------------------------------------------------
      Render
      ------------------------------------------------------- */
-
+  // Browser Back closes: image preview -> View all -> page
+  useBackStack((view === "all" ? 1 : 0) + (selectedImage ? 1 : 0), () => {
+    if (selectedImage) {
+      setSelectedImage(null);
+    } else if (view === "all") {
+      cancelReorder();
+      closeViewAll();
+    }
+  });
   return (
     <main className="drawings-page">
       <div className="drawings-background" aria-hidden="true" />
@@ -1217,14 +1229,16 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
           </>
         ) : (
           <>
-            <button
-              type="button"
-              className="drawings-upload-btn"
-              onClick={openFilePicker}
-              disabled={uploading}
-            >
-              Upload
-            </button>
+            {admin && (
+              <button
+                type="button"
+                className="drawings-upload-btn"
+                onClick={openFilePicker}
+                disabled={uploading}
+              >
+                Upload
+              </button>
+            )}
 
             {view === "marquee" ? (
               <button
@@ -1284,11 +1298,13 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
             <p>
               {isReordering
                 ? "Drag images or use the arrows, then press Save."
-                : "Browse your drawings or choose Reorder to arrange them."}
+                : admin
+                  ? "Browse your drawings or choose Reorder to arrange them."
+                  : "Browse the drawings."}
             </p>
 
             <div className="drawings-bar-actions">
-              {hidden.length > 0 && !isReordering && (
+              {admin && hidden.length > 0 && !isReordering && (
                 <button
                   type="button"
                   className="drawings-reset"
@@ -1298,8 +1314,7 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
                 </button>
               )}
 
-
-              {!isReordering && (
+              {admin && !isReordering && (
                 <button
                   type="button"
                   className="drawings-reset"
@@ -1386,7 +1401,7 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
                   <span className="drawing-card-overlay" />
                 </button>
 
-                {!isReordering && (
+                {admin && !isReordering && (
                   <button
                     type="button"
                     className="drawing-remove"

@@ -311,3 +311,57 @@ filter: none;
     transition-duration: 0.2s;
   }
 }
+/* =========================================================
+   TABLET (561px – 1100px): Reviews page fixes
+   ========================================================= */
+@media (min-width: 561px) and (max-width: 1100px) {
+  /* Centre the content vertically so there is no big empty area */
+  .reviews-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100svh;
+    padding: 100px 0 60px;
+  }
+
+  /* Bigger cards that wrap the image instead of a fixed tall box */
+  .review-card {
+    flex-basis: 440px;
+    width: 440px;
+  }
+
+  .review-image-wrap {
+    height: auto;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .review-image-wrap img {
+    width: 100%;
+    height: auto;
+    max-height: 560px;
+    object-fit: contain;
+  }
+
+  .reviews-set {
+    gap: 34px;
+    padding-right: 34px;
+  }
+
+  .review-card.is-active {
+    transform: translateY(-18px) scale(1.05);
+  }
+
+  .reviews-carousel {
+    padding: 50px 0 40px;
+  }
+
+  .reviews-footer {
+    margin-top: 20px;
+    padding: 0 6%;
+    font-size: 14px;
+    letter-spacing: 3px;
+  }
+}
