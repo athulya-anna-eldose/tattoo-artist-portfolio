@@ -9,6 +9,7 @@ import Piercing from "./pages/piercing/piercing";
 import Drawings from "./pages/drawing/drawing";
 import About from "./pages/about/about";
 import LogoIntro from "./pages/logoIntro/LogoIntro";
+import logoImage from "./assets/inker_logo_transparent.png";
 
 type Page =
   | "home"
@@ -40,8 +41,12 @@ const readIdx = (): number => {
   const idx = window.history.state?.idx;
   return typeof idx === "number" ? idx : 0;
 };
+interface AppProps {
+   onAboutClick: () => void;
+}
 
-function App() {
+function App({onAboutClick
+}: AppProps) {
   const [currentPage, setCurrentPage] = useState<Page>(readPage);
   const [showIntro, setShowIntro] = useState(true);
 
@@ -116,20 +121,25 @@ function App() {
 
       <nav className="navbar">
         <div
-          className="logo"
-          onClick={goToHome}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              goToHome();
-            }
-          }}
-        >
-          AKHIL DAS
-        </div>
+    className="logo"
+    onClick={goToHome}
+    role="button"
+    tabIndex={0}
+    aria-label="Go to home"
+    onKeyDown={(event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        goToHome();
+      }
+    }}
+  >
+    <img src={logoImage} alt="Akhil Das Inker logo" className="logo-img" />
+  </div>
 
         <div className="nav-links">
+           
+         
+        
+        <button onClick={() => navigate("about")}>About </button>
           <button onClick={() => navigate("reviews")}>Reviews</button>
           <button onClick={() => navigate("contact")}>Contact</button>
         </div>

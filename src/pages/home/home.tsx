@@ -12,7 +12,7 @@ interface HomeProps {
   onAboutClick: () => void;
 }
 
-const categories = ["Piercing", "Tattoo", "Drawings"];
+const categories = ["Tattoo", "Piercing", "Drawings"];
 
 function Home({
   onWorkClick,
@@ -60,7 +60,7 @@ function Home({
             </button>
           ))}
         </div>
-
+   
         <button
           type="button"
           className="reviews-link"
@@ -68,11 +68,10 @@ function Home({
         >
           Read Client Reviews <span>→</span>
         </button>
+   
       </div>
 
-      <button type="button" className="about-cta" onClick={onAboutClick}>
-  <span>Know more about me?</span>
-</button>
+     
     </section>
   );
 }

@@ -568,3 +568,50 @@
     font-size: 22px;
   }
 }
+/* =========================================================
+   MOBILE FIX: move the photo up, push the text down
+   ========================================================= */
+@media (max-width: 480px) {
+  .home {
+    --hero-shift: 2%;
+    --hero-lift: -9%;          /* negative = photo moves UP. try -6% to -14% */
+    padding: 55px 6% 70px;     /* less bottom padding = text sits lower */
+  }
+
+  /* bigger zoom so moving up never shows an empty strip at the bottom */
+  .home::before {
+    transform: translate(var(--hero-shift), var(--hero-lift)) scale(1.22);
+    transform-origin: 45% 40%;
+  }
+
+  /* stronger dark fade at the bottom so the text stays readable
+     even when it sits over the shirt / hand */
+  .home-overlay {
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.3)),
+      linear-gradient(0deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.5) 38%, transparent 62%);
+  }
+
+  /* slightly more compact text block, so it takes less height */
+  .hero-eyebrow {
+    margin-bottom: 12px;
+  }
+
+  .hero-content h1 {
+    margin-bottom: 16px;
+    font-size: clamp(28px, 7.6vw, 36px);
+    line-height: 1.3;
+  }
+
+  .hero-role {
+    font-size: clamp(19px, 5.4vw, 25px);
+  }
+
+  .hero-bio {
+    margin-bottom: 18px;
+  }
+
+  .reviews-link {
+    margin-top: 16px;
+  }
+}

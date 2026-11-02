@@ -61,33 +61,64 @@ section.wg-page > .wg-status {
   cursor: not-allowed;
 }
 @media (min-width: 561px) and (max-width: 1100px) {
-  /* Push the toolbar below the big Upload / Done buttons */
+ /* ===== "View all" toolbar: below the fixed Upload / Done buttons, all sizes ===== */
+
+section.wg-page .wg-all-view {
+  padding-top: 72px !important;           /* phones */
+}
+
+section.wg-page .wg-all-toolbar {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  position: static !important;
+  margin-bottom: 18px !important;
+}
+
+section.wg-page .wg-all-toolbar p {
+  margin: 0 !important;
+  font-size: 12px !important;
+}
+
+section.wg-page .wg-all-toolbar-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  position: static !important;
+}
+
+section.wg-page .wg-all-toolbar-actions button,
+section.wg-page .wg-all-reset {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 18px !important;
+  border-radius: 19px !important;
+  font-size: 11px !important;
+  letter-spacing: 1.5px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+/* tablet */
+@media (min-width: 561px) and (max-width: 1100px) {
   section.wg-page .wg-all-view {
     padding-top: 90px !important;
   }
 
   section.wg-page .wg-all-toolbar {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
     gap: 14px !important;
-    position: static !important;
     margin-bottom: 20px !important;
   }
 
   section.wg-page .wg-all-toolbar p {
     font-size: 14px !important;
-    margin: 0 !important;
   }
 
   section.wg-page .wg-all-toolbar-actions {
-    display: flex !important;
-    flex-wrap: wrap !important;
     gap: 12px !important;
-    position: static !important;
   }
 
-  /* Reset order / Restore deleted / Reorder */
   section.wg-page .wg-all-toolbar-actions button,
   section.wg-page .wg-all-reset {
     height: 44px !important;
@@ -96,7 +127,34 @@ section.wg-page > .wg-status {
     border-radius: 22px !important;
     font-size: 13px !important;
     letter-spacing: 2px !important;
-    line-height: 1 !important;
-    white-space: nowrap !important;
   }
+}
+
+/* desktop */
+@media (min-width: 1101px) {
+  section.wg-page .wg-all-view {
+    padding-top: 96px !important;
+  }
+
+  section.wg-page .wg-all-toolbar p {
+    font-size: 14px !important;
+  }
+
+  section.wg-page .wg-all-toolbar-actions button,
+  section.wg-page .wg-all-reset {
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 22px !important;
+    border-radius: 21px !important;
+    font-size: 12px !important;
+    letter-spacing: 2px !important;
+  }
+}
+
+/* carousel: vertical page scroll still works, sideways swipe is handled by the code */
+.wg-carousel {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
 }

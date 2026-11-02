@@ -18,6 +18,7 @@ import tattoo10 from "../../assets/1d (14).jpg";
 import tattoo11 from "../../assets/1d (15).jpg";
 import tattoo12 from "../../assets/1d (18).jpg";
 import { useBackStack } from "../../useBackStack";
+
 interface PiercingProps {
   onBackToHome: () => void;
 }
@@ -410,6 +411,10 @@ function Piercing({ onBackToHome }: PiercingProps) {
   const draggedRef = useRef(false);
   const closeTimerRef = useRef<number | null>(null);
 
+  // Used to stop overlapping background syncs.
+  const syncingRef = useRef(false);
+  const syncIdRef = useRef(0);
+
   uploadsRef.current = uploads;
 
   // Only used as a fallback if the server does not return an image URL.
@@ -444,6 +449,14 @@ function Piercing({ onBackToHome }: PiercingProps) {
     pendingDeleteId !== null;
 
   const syncFromServer = useCallback(async (silent: boolean) => {
+    // A background refresh never starts while another sync is still running
+    // (a slow server can take minutes to answer). This prevents requests
+    // piling up and old answers overwriting newer ones.
+    if (silent && syncingRef.current) return;
+
+    const syncId = ++syncIdRef.current;
+    syncingRef.current = true;
+
     if (!silent) setLoadError(false);
 
     try {
@@ -462,6 +475,9 @@ function Piercing({ onBackToHome }: PiercingProps) {
       if (!Array.isArray(data)) {
         throw new Error("The piercings API did not return a list.");
       }
+
+      // A newer sync has started: ignore this older answer.
+      if (syncId !== syncIdRef.current) return;
 
       // Do not change the screen while the user is in the middle of
       // reordering, uploading or deleting.
@@ -485,7 +501,9 @@ function Piercing({ onBackToHome }: PiercingProps) {
         });
       });
 
-      setUploads((previous) => (sameJson(previous, loaded) ? previous : loaded));
+      setUploads((previous) =>
+        sameJson(previous, loaded) ? previous : loaded
+      );
 
       setOrder((previous) => {
         // The saved server order wins. If none exists yet, keep this
@@ -507,9 +525,14 @@ function Piercing({ onBackToHome }: PiercingProps) {
     } catch (error) {
       console.error("Could not sync piercings with the backend:", error);
 
-      // Silent background retries keep any banner that is already showing.
-      setLoadError(true);
+      if (syncId === syncIdRef.current) {
+        setLoadError(true);
+      }
     } finally {
+      if (syncId === syncIdRef.current) {
+        syncingRef.current = false;
+      }
+
       setUploadsReady(true);
     }
   }, []);
@@ -694,13 +717,21 @@ function Piercing({ onBackToHome }: PiercingProps) {
     });
   }, [activeIndex, filteredTattoos]);
 
-  /* Automatically rotate the carousel. */
+  /* Automatically rotate the carousel.
+     It pauses while the user is dragging, viewing an image, browsing
+     "View all", or has any pop-up open, so the background never changes
+     behind a dialog. */
 
   useEffect(() => {
     if (
       isDragging ||
       selectedImage ||
       showAll ||
+      isReordering ||
+      uploading ||
+      showUploadConfirm ||
+      showReorderConfirm ||
+      pendingDeleteId !== null ||
       filteredTattoos.length < 2
     ) {
       return;
@@ -711,7 +742,37 @@ function Piercing({ onBackToHome }: PiercingProps) {
     }, 2400);
 
     return () => window.clearInterval(timer);
-  }, [isDragging, selectedImage, showAll, filteredTattoos.length]);
+  }, [
+    isDragging,
+    selectedImage,
+    showAll,
+    isReordering,
+    uploading,
+    showUploadConfirm,
+    showReorderConfirm,
+    pendingDeleteId,
+    filteredTattoos.length,
+  ]);
+
+  /* Safety net: if a finger / mouse is released outside the carousel
+     (or the browser cancels the gesture), always end the drag so the
+     auto-rotation can never stay frozen. */
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const stopDragging = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("pointerup", stopDragging);
+    window.addEventListener("pointercancel", stopDragging);
+
+    return () => {
+      window.removeEventListener("pointerup", stopDragging);
+      window.removeEventListener("pointercancel", stopDragging);
+    };
+  }, [isDragging]);
 
   /* Lightbox helpers. */
 
@@ -1094,34 +1155,6 @@ function Piercing({ onBackToHome }: PiercingProps) {
     }
   };
 
-  const resetOrder = async () => {
-    const uploadedIds = uploads.map((item) => item.id);
-
-    const restoredOrder = [
-      ...defaultOrder.filter((id) => itemsById.has(id)),
-      ...uploadedIds.filter((id) => itemsById.has(id)),
-    ];
-
-    // While reordering, Reset only changes the draft. Save commits it.
-    if (isReordering) {
-      setDraftOrder(restoredOrder);
-      return;
-    }
-
-    try {
-      await saveBackendOrder(restoredOrder);
-      await writeSetting(ORDER_KEY, restoredOrder);
-
-      setOrder(restoredOrder);
-    } catch (error) {
-      console.error("Could not reset the order:", error);
-
-      window.alert(
-        "Could not reset the order on the server. Please check that the backend is running and try again."
-      );
-    }
-  };
-
   const restoreDeleted = async () => {
     if (restoring) return;
 
@@ -1295,6 +1328,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
     dragDistance.current = 0;
     draggedRef.current = false;
   };
+
   // Browser Back closes: lightbox -> View all -> page
   useBackStack((showAll ? 1 : 0) + (selectedImage ? 1 : 0), () => {
     if (selectedImageRef.current) {
@@ -1306,6 +1340,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
       setDraftOrder([]);
     }
   });
+
   /* ---------------- Render ---------------- */
 
   return (
@@ -1431,16 +1466,6 @@ function Piercing({ onBackToHome }: PiercingProps) {
             </p>
 
             <div className="wg-all-toolbar-actions">
-              {admin && (
-                <button
-                  type="button"
-                  className="wg-all-reset"
-                  onClick={() => void resetOrder()}
-                >
-                  Reset order
-                </button>
-              )}
-
               {admin && hidden.length > 0 && !isReordering && (
                 <button
                   type="button"

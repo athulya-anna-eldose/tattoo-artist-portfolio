@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import "./LogoIntro.css";
 
-import logoImage from "../../assets/vintage-tattoo-studio-logo-with-2-tattoo-machine-vector.jpg";
+import logoImage from "../../assets/inker_logo_transparent.png";
 
 interface LogoIntroProps {
   onComplete: () => void;
@@ -52,9 +52,6 @@ function LogoIntro({ onComplete }: LogoIntroProps) {
       <div className="intro-stage">
         <div className="intro-halo" />
 
-        <div className="intro-ring intro-ring--outer" />
-        <div className="intro-ring intro-ring--inner" />
-
         <div className="intro-logo-frame">
           <img
             className="intro-logo"
@@ -70,9 +67,9 @@ function LogoIntro({ onComplete }: LogoIntroProps) {
 
    
 
-      <div className="intro-loader">
+      {/* <div className="intro-loader">
         <span />
-      </div>
+      </div> */}
 
 
     </section>
