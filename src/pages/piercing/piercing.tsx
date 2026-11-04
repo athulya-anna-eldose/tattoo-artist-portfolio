@@ -414,21 +414,21 @@ const nameInputStyle: CSSProperties = {
   outline: "none",
 };
 
-/* Name label shown on the carousel cards and the "View all" tiles. */
+/* Name shown INSIDE A BOX on the carousel cards and the "View all" tiles. */
 
 const cardNameStyle = (edge: "top" | "bottom"): CSSProperties => ({
   position: "absolute",
-  left: 0,
-  right: 0,
-  [edge]: 0,
+  left: "10px",
+  right: "10px",
+  [edge]: "10px",
   zIndex: 4,
   boxSizing: "border-box",
-  padding: edge === "top" ? "10px 12px 28px" : "28px 12px 10px",
-  background: `linear-gradient(to ${
-    edge === "top" ? "bottom" : "top"
-  }, rgba(0, 0, 0, 0.78), transparent)`,
+  padding: "8px 12px",
+  background: "rgba(12, 11, 9, 0.82)",
+  border: "1px solid rgba(215, 173, 105, 0.55)",
+  borderRadius: "10px",
   color: "#f4ead9",
-  fontSize: "14px",
+  fontSize: "13px",
   fontWeight: 600,
   letterSpacing: "1.5px",
   textAlign: "center",
@@ -438,6 +438,26 @@ const cardNameStyle = (edge: "top" | "bottom"): CSSProperties => ({
   textOverflow: "ellipsis",
   pointerEvents: "none",
 });
+
+/* Name box under the full-screen image. */
+
+const lightboxNameStyle: CSSProperties = {
+  display: "inline-block",
+  maxWidth: "90vw",
+  boxSizing: "border-box",
+  padding: "9px 22px",
+  background: "rgba(12, 11, 9, 0.82)",
+  border: "1px solid rgba(215, 173, 105, 0.55)",
+  borderRadius: "12px",
+  color: "#f4ead9",
+  fontSize: "14px",
+  fontWeight: 600,
+  letterSpacing: "2px",
+  textTransform: "uppercase",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
 
 /* ---------------- Gallery component ---------------- */
 
@@ -1833,7 +1853,11 @@ function Piercing({ onBackToHome }: PiercingProps) {
           />
 
           {/* Name of the piercing (only uploaded images have one) */}
-          <div className="wg-lightbox-caption">{selectedImage.name}</div>
+          <div className="wg-lightbox-caption">
+            {selectedImage.name && (
+              <span style={lightboxNameStyle}>{selectedImage.name}</span>
+            )}
+          </div>
 
           <div className="wg-lightbox-navigation">
             <button
