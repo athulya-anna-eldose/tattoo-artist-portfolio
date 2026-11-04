@@ -203,3 +203,25 @@ main {
     height: 38px;
   }
 }
+/* ===== BIGGER NAVBAR LOGO ===== */
+
+.navbar {
+  padding-top: 8px;      /* less padding, so the navbar height stays about 86px */
+  padding-bottom: 8px;
+}
+
+.logo-img {
+  height: 70px;          /* was 48px */
+  width: auto;
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+
+  .logo-img {
+    height: 58px;        /* was 38px */
+  }
+}

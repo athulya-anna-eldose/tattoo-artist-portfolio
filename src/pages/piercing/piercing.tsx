@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, PointerEvent } from "react";
+import type { ChangeEvent, CSSProperties, PointerEvent } from "react";
 import "./piercing.css";
 
 import deleteIcon from "../../assets/images.png";
@@ -29,12 +29,14 @@ interface Tattoo {
   category?: string;
   uploaded: boolean;
   backendId?: number;
+  name?: string;
 }
 
 interface UploadedImage {
   id: string;
   src: string;
   backendId: number;
+  name?: string;
 }
 
 /* ---------------------------------------------------------
@@ -171,6 +173,20 @@ const getBackendId = (item: unknown): number | null => {
 
   return Number.isInteger(id) && id > 0 ? id : null;
 };
+
+/** The piercing name saved by the backend (the "name" field). */
+const getName = (item: unknown): string | undefined => {
+  if (!item || typeof item !== "object") return undefined;
+
+  const value = (item as Record<string, unknown>).name;
+
+  return typeof value === "string" && value.trim() !== ""
+    ? value.trim()
+    : undefined;
+};
+
+/** Default piercing name = file name without the extension. */
+const nameFromFile = (file: File) => file.name.replace(/\.[^/.]+$/, "");
 
 /* ---------------------------------------------------------
    Shared settings stored on the BACKEND
@@ -364,6 +380,40 @@ function BackButton({
   );
 }
 
+/* Styles for the "piercing name" inputs in the upload popup. */
+
+const nameListStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px",
+  maxHeight: "40vh",
+  overflowY: "auto",
+  margin: "14px 0 18px",
+  textAlign: "left",
+};
+
+const nameLabelStyle: CSSProperties = {
+  display: "block",
+  marginBottom: "5px",
+  fontSize: "11px",
+  letterSpacing: "1px",
+  opacity: 0.65,
+  wordBreak: "break-all",
+};
+
+const nameInputStyle: CSSProperties = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "10px 12px",
+  border: "1px solid rgba(215, 173, 105, 0.4)",
+  borderRadius: "10px",
+  background: "rgba(255, 255, 255, 0.06)",
+  color: "inherit",
+  font: "inherit",
+  fontSize: "14px",
+  outline: "none",
+};
+
 /* ---------------- Gallery component ---------------- */
 
 function Piercing({ onBackToHome }: PiercingProps) {
@@ -395,6 +445,8 @@ function Piercing({ onBackToHome }: PiercingProps) {
   const [reloadKey, setReloadKey] = useState(0);
 
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  // One name per selected file (same order as pendingFiles).
+  const [pendingNames, setPendingNames] = useState<string[]>([]);
   const [showUploadConfirm, setShowUploadConfirm] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -498,6 +550,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
           id: `up-${backendId}`,
           src,
           backendId,
+          name: getName(entry),
         });
       });
 
@@ -622,6 +675,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
         category: "Minimal Line Works",
         uploaded: true,
         backendId: item.backendId,
+        name: item.name,
       });
     });
 
@@ -847,6 +901,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
       if (showUploadConfirm && !uploading) {
         setShowUploadConfirm(false);
         setPendingFiles([]);
+        setPendingNames([]);
       } else if (showReorderConfirm && !savingReorder) {
         setShowReorderConfirm(false);
       } else if (pendingDeleteId && !deleting) {
@@ -877,6 +932,11 @@ function Piercing({ onBackToHome }: PiercingProps) {
     document.body.style.overflow = "hidden";
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Do not change the image while typing in a text box.
+      const target = event.target as HTMLElement | null;
+
+      if (target && target.tagName === "INPUT") return;
+
       if (event.key === "ArrowLeft") {
         changeSelectedImage(-1);
       } else if (event.key === "ArrowRight") {
@@ -932,7 +992,15 @@ function Piercing({ onBackToHome }: PiercingProps) {
     if (files.length === 0) return;
 
     setPendingFiles(files);
+    // Start with the file name (without extension). The user can change it.
+    setPendingNames(files.map(nameFromFile));
     setShowUploadConfirm(true);
+  };
+
+  const changePendingName = (index: number, value: string) => {
+    setPendingNames((previous) =>
+      previous.map((name, i) => (i === index ? value : name))
+    );
   };
 
   const cancelUpload = () => {
@@ -940,22 +1008,32 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
     setShowUploadConfirm(false);
     setPendingFiles([]);
+    setPendingNames([]);
   };
 
   const confirmUpload = async () => {
     if (uploading || pendingFiles.length === 0) return;
 
+    // Every piercing needs a name.
+    if (pendingNames.some((name) => name.trim() === "")) {
+      window.alert("Please enter a name for every piercing.");
+      return;
+    }
+
     setUploading(true);
 
     let filesToProcess = [...pendingFiles];
+    let namesToProcess = [...pendingNames];
 
     try {
       while (filesToProcess.length > 0) {
         const file = filesToProcess[0];
+        const piercingName =
+          (namesToProcess[0] ?? "").trim() || nameFromFile(file);
 
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("name", file.name.replace(/\.[^/.]+$/, ""));
+        formData.append("name", piercingName);
 
         // Uploads are NOT retried automatically (a retry could create
         // duplicates), but they wait long enough for a sleeping server.
@@ -982,7 +1060,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
           throw new Error(
             message ||
-              `Upload failed for "${file.name}" (${response.status}).`
+              `Upload failed for "${piercingName}" (${response.status}).`
           );
         }
 
@@ -991,7 +1069,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
         if (backendId === null) {
           throw new Error(
-            `The server did not return a valid ID for "${file.name}".`
+            `The server did not return a valid ID for "${piercingName}".`
           );
         }
 
@@ -1009,6 +1087,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
             id,
             src,
             backendId,
+            name: getName(savedPiercing) ?? piercingName,
           };
 
           uploadsRef.current = [...uploadsRef.current, uploadedItem];
@@ -1022,10 +1101,13 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
         // Remove each successful file from the pending queue immediately.
         filesToProcess = filesToProcess.slice(1);
+        namesToProcess = namesToProcess.slice(1);
         setPendingFiles(filesToProcess);
+        setPendingNames(namesToProcess);
       }
 
       setPendingFiles([]);
+      setPendingNames([]);
       setShowUploadConfirm(false);
     } catch (error) {
       console.error("Piercing upload failed:", error);
@@ -1036,8 +1118,9 @@ function Piercing({ onBackToHome }: PiercingProps) {
           : "Upload failed. Please try again."
       );
 
-      // Keep only the files that have not yet been processed.
+      // Keep only the files (and names) that have not yet been processed.
       setPendingFiles(filesToProcess);
+      setPendingNames(namesToProcess);
     } finally {
       setUploading(false);
     }
@@ -1550,7 +1633,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
               >
                 <img
                   src={tattoo.image}
-                  alt={`Piercing artwork ${index + 1}`}
+                  alt={tattoo.name ?? `Piercing artwork ${index + 1}`}
                   draggable={false}
                   decoding="async"
                   loading="lazy"
@@ -1650,7 +1733,7 @@ function Piercing({ onBackToHome }: PiercingProps) {
                     >
                       <img
                         src={tattoo.image}
-                        alt={`Piercing artwork ${index + 1}`}
+                        alt={tattoo.name ?? `Piercing artwork ${index + 1}`}
                         draggable={false}
                         decoding="async"
                         loading={Math.abs(offset) <= 2 ? "eager" : "lazy"}
@@ -1710,13 +1793,14 @@ function Piercing({ onBackToHome }: PiercingProps) {
           <img
             key={`foreground-${selectedImage.id}`}
             src={selectedImage.image}
-            alt="Selected piercing artwork"
+            alt={selectedImage.name ?? "Selected piercing artwork"}
             className="wg-lightbox-img"
             draggable={false}
             onClick={(event) => event.stopPropagation()}
           />
 
-          <div className="wg-lightbox-caption" />
+          {/* Name of the piercing (only uploaded images have one) */}
+          <div className="wg-lightbox-caption">{selectedImage.name}</div>
 
           <div className="wg-lightbox-navigation">
             <button
@@ -1786,7 +1870,8 @@ function Piercing({ onBackToHome }: PiercingProps) {
         </div>
       )}
 
-      {/* Upload confirmation: no API request before Confirm. */}
+      {/* Upload confirmation: enter a name for each piercing.
+          No API request is made before Confirm. */}
 
       {showUploadConfirm && (
         <div
@@ -1805,10 +1890,37 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
             <p>
               {pendingFiles.length} image
-              {pendingFiles.length === 1 ? "" : "s"} selected. Do you want to
-              upload
-              {pendingFiles.length === 1 ? " this image" : " these images"}?
+              {pendingFiles.length === 1 ? "" : "s"} selected. Enter a name
+              for {pendingFiles.length === 1 ? "the piercing" : "each piercing"}
+              , then confirm.
             </p>
+
+            <div style={nameListStyle}>
+              {pendingFiles.map((file, index) => (
+                <div key={`${file.name}-${file.size}-${index}`}>
+                  <label
+                    style={nameLabelStyle}
+                    htmlFor={`wg-piercing-name-${index}`}
+                  >
+                    {file.name}
+                  </label>
+
+                  <input
+                    id={`wg-piercing-name-${index}`}
+                    type="text"
+                    style={nameInputStyle}
+                    value={pendingNames[index] ?? ""}
+                    placeholder="Piercing name"
+                    maxLength={100}
+                    autoFocus={index === 0}
+                    disabled={uploading}
+                    onChange={(event) =>
+                      changePendingName(index, event.target.value)
+                    }
+                  />
+                </div>
+              ))}
+            </div>
 
             <div className="wg-delete-actions">
               <button
@@ -1824,7 +1936,11 @@ function Piercing({ onBackToHome }: PiercingProps) {
                 type="button"
                 className="wg-delete-submit"
                 onClick={() => void confirmUpload()}
-                disabled={uploading || pendingFiles.length === 0}
+                disabled={
+                  uploading ||
+                  pendingFiles.length === 0 ||
+                  pendingNames.some((name) => name.trim() === "")
+                }
               >
                 {uploading ? "Uploading..." : "Confirm"}
               </button>
