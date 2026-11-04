@@ -42,7 +42,7 @@ const readIdx = (): number => {
   return typeof idx === "number" ? idx : 0;
 };
 interface AppProps {
-   onAboutClick: () => void;
+   onAboutClick?: () => void;
 }
 
 function App({onAboutClick
