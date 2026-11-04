@@ -414,6 +414,31 @@ const nameInputStyle: CSSProperties = {
   outline: "none",
 };
 
+/* Name label shown on the carousel cards and the "View all" tiles. */
+
+const cardNameStyle = (edge: "top" | "bottom"): CSSProperties => ({
+  position: "absolute",
+  left: 0,
+  right: 0,
+  [edge]: 0,
+  zIndex: 4,
+  boxSizing: "border-box",
+  padding: edge === "top" ? "10px 12px 28px" : "28px 12px 10px",
+  background: `linear-gradient(to ${
+    edge === "top" ? "bottom" : "top"
+  }, rgba(0, 0, 0, 0.78), transparent)`,
+  color: "#f4ead9",
+  fontSize: "14px",
+  fontWeight: 600,
+  letterSpacing: "1.5px",
+  textAlign: "center",
+  textTransform: "uppercase",
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  pointerEvents: "none",
+});
+
 /* ---------------- Gallery component ---------------- */
 
 function Piercing({ onBackToHome }: PiercingProps) {
@@ -1641,6 +1666,10 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
                 <span className="wg-all-number">{index + 1}</span>
 
+                {tattoo.name && (
+                  <span style={cardNameStyle("bottom")}>{tattoo.name}</span>
+                )}
+
                 {admin && !isReordering && (
                   <button
                     type="button"
@@ -1740,6 +1769,10 @@ function Piercing({ onBackToHome }: PiercingProps) {
                       />
 
                       <span className="wg-image-shade" />
+
+                      {tattoo.name && (
+                        <span style={cardNameStyle("top")}>{tattoo.name}</span>
+                      )}
 
                       <span className="wg-artwork-info">
                         <small>
