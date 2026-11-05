@@ -418,25 +418,32 @@ const nameInputStyle: CSSProperties = {
 
 const cardNameStyle = (edge: "top" | "bottom"): CSSProperties => ({
   position: "absolute",
-  left: "10px",
-  right: "10px",
-  [edge]: "10px",
+  left: 0,
+  right: 0,
+  [edge]: 0,
   zIndex: 4,
   boxSizing: "border-box",
-  padding: "8px 12px",
-  background: "rgba(12, 11, 9, 0.82)",
-  border: "1px solid rgba(215, 173, 105, 0.55)",
-  borderRadius: "10px",
-  color: "#f4ead9",
-  fontSize: "13px",
-  fontWeight: 600,
-  letterSpacing: "1.5px",
+  display: "block",
+  // Soft fade instead of a box: no border, no visible edge
+  padding: edge === "bottom" ? "56px 16px 18px" : "18px 16px 56px",
+  background:
+    edge === "bottom"
+      ? "linear-gradient(to top, rgba(8, 7, 5, 0.88) 0%, rgba(8, 7, 5, 0.55) 45%, rgba(8, 7, 5, 0) 100%)"
+      : "linear-gradient(to bottom, rgba(8, 7, 5, 0.88) 0%, rgba(8, 7, 5, 0.55) 45%, rgba(8, 7, 5, 0) 100%)",
+  border: "none",
+  borderRadius: 0,
+  color: "#f0d9a8", // soft gold-ivory to match your theme
+  fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, serif',
+  fontSize: "clamp(15px, 1.4vw + 9px, 22px)",
+  fontWeight: 700,
+  letterSpacing: "4px",
   textAlign: "center",
   textTransform: "uppercase",
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
   pointerEvents: "none",
+  textShadow: "0 2px 6px rgba(0, 0, 0, 0.9)",
 });
 
 /* Name box under the full-screen image. */
@@ -1585,25 +1592,10 @@ function Piercing({ onBackToHome }: PiercingProps) {
       {showAll && (
         <div className="wg-all-view">
           <div className="wg-all-toolbar">
-            <p>
-              {isReordering
-                ? "Drag images to rearrange them, then press Save."
-                : admin
-                  ? "Click an image to view it. Use Reorder to change the order."
-                  : "Click an image to view it."}
-            </p>
+         
 
             <div className="wg-all-toolbar-actions">
-              {admin && hidden.length > 0 && !isReordering && (
-                <button
-                  type="button"
-                  className="wg-all-reset"
-                  onClick={() => void restoreDeleted()}
-                  disabled={restoring}
-                >
-                  {restoring ? "Restoring..." : "Restore deleted"}
-                </button>
-              )}
+             
 
               {admin && !isReordering && (
                 <button
@@ -1790,9 +1782,9 @@ function Piercing({ onBackToHome }: PiercingProps) {
 
                       <span className="wg-image-shade" />
 
-                      {tattoo.name && (
-                        <span style={cardNameStyle("top")}>{tattoo.name}</span>
-                      )}
+                     {tattoo.name && (
+  <span style={cardNameStyle("bottom")}>{tattoo.name}</span>
+)}
 
                       <span className="wg-artwork-info">
                         <small>

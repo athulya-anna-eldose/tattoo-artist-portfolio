@@ -15,13 +15,19 @@ interface AboutProps {
 }
 
 /* Edit this text to tell your own story. */
+/* Edit this text to tell your own story. Text between *stars* becomes bold. */
 const ABOUT_PARAGRAPHS: string[] = [
-  "Hello, I'm Akhil, a tattoo artist and creative designer. I work across piercing, tattoo and drawings, and I bring the same attention to detail and clean, minimal linework to each of them.",
-  "Every piece begins with a conversation. I listen to your idea, shape it into a design that suits you, and look after every step, from the first sketch to the final result.",
-  "My goal is simple: you leave feeling comfortable, and with work you are proud to wear.",
+  "I'm a *Professional Tattoo artist, Piercer & Creative Designer* with over 5 years of experience, transforming personal stories, ideas and inspirations into meaningful works of art.",
+  "Specialising in *Black & Grey Realism, Fine Line, Dotworks etc*, my approach combines artistic precision, attention to detail and individuality to create thoughtfully crafted tattoos.",
+  "I believe *every great tattoo experience begins with trust*. From consultation to completion, I prioritise *client comfort, clear communication, strict hygiene standards and professional care*, ensuring every client feels *respected, confident and comfortable*.",
+  "My philosophy is simple: *Never compromise on Art, Quality or Trust*.",
 ];
 
-// const SPECIALITIES = ["Piercing", "Tattoo", "Drawings"];
+/* Turns *text* into bold text. */
+const renderBold = (text: string) =>
+  text
+    .split(/\*(.+?)\*/g)
+    .map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part));
 
 function About({ onBackToHome, onReviewsClick, onContactClick }: AboutProps) {
   return (
@@ -60,19 +66,18 @@ function About({ onBackToHome, onReviewsClick, onContactClick }: AboutProps) {
       </div>
 
       <div className="about-body">
-        <p className="about-eyebrow">ABOUT ME</p>
 
-        <h1>
-          Hi, I&apos;m <span className="about-gradient">Akhil.</span>
-        </h1>
+       <h1>
+  Hi, I&apos;m <span className="about-gradient">Akhil Das.</span>
+</h1>
 
-        <p className="about-role">Tattoo Artist &amp; Creative Designer.</p>
+        <p className="about-role">Tattoo Artist, Piercer  &amp; Creative Designer.</p>
 
         {ABOUT_PARAGRAPHS.map((paragraph) => (
-          <p className="about-text" key={paragraph}>
-            {paragraph}
-          </p>
-        ))}
+  <p className="about-text" key={paragraph}>
+    {renderBold(paragraph)}
+  </p>
+))}
 {/* 
         <ul className="about-tags" aria-label="Specialities">
           {SPECIALITIES.map((item) => (

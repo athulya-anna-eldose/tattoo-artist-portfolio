@@ -9,7 +9,7 @@ import Piercing from "./pages/piercing/piercing";
 import Drawings from "./pages/drawing/drawing";
 import About from "./pages/about/about";
 import LogoIntro from "./pages/logoIntro/LogoIntro";
-import logoImage from "./assets/inker_logo_transparent.png";
+import logoImage from "./assets/a_clean_isolated_logo_graphic_on_a_transparent_ba.png";
 
 type Page =
   | "home"
@@ -41,12 +41,8 @@ const readIdx = (): number => {
   const idx = window.history.state?.idx;
   return typeof idx === "number" ? idx : 0;
 };
-interface AppProps {
-   onAboutClick?: () => void;
-}
 
-function App({onAboutClick
-}: AppProps) {
+function App() {
   const [currentPage, setCurrentPage] = useState<Page>(readPage);
   const [showIntro, setShowIntro] = useState(true);
 
@@ -73,7 +69,6 @@ function App({onAboutClick
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  // Use this instead of setCurrentPage everywhere.
   const navigate = useCallback((next: Page) => {
     if (next === readPage()) return;
 
@@ -116,30 +111,31 @@ function App({onAboutClick
   }, [currentPage]);
 
   return (
-    <div className="app">
+    <div className={`app ${currentPage === "home" ? "app--home" : ""}`}>
       {showIntro && <LogoIntro onComplete={completeIntro} />}
 
       <nav className="navbar">
         <div
-    className="logo"
-    onClick={goToHome}
-    role="button"
-    tabIndex={0}
-    aria-label="Go to home"
-    onKeyDown={(event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        goToHome();
-      }
-    }}
-  >
-    <img src={logoImage} alt="Akhil Das Inker logo" className="logo-img" />
-  </div>
+          className="logo"
+          onClick={goToHome}
+          role="button"
+          tabIndex={0}
+          aria-label="Go to home"
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              goToHome();
+            }
+          }}
+        >
+          <img
+            src={logoImage}
+            alt="Akhil Das Inker logo"
+            className="logo-img"
+          />
+        </div>
 
         <div className="nav-links">
-           
-         
-        
-        <button onClick={() => navigate("about")}>About </button>
+          <button onClick={() => navigate("about")}>About</button>
           <button onClick={() => navigate("reviews")}>Reviews</button>
           <button onClick={() => navigate("contact")}>Contact</button>
         </div>
@@ -158,13 +154,9 @@ function App({onAboutClick
         )}
 
         {currentPage === "work" && <Work onBackToHome={goBack} />}
-
         {currentPage === "piercing" && <Piercing onBackToHome={goBack} />}
-
         {currentPage === "drawings" && <Drawings onBackToHome={goBack} />}
-
         {currentPage === "reviews" && <Reviews onBackToHome={goBack} />}
-
         {currentPage === "contact" && <Contact onBackToHome={goBack} />}
 
         {currentPage === "about" && (

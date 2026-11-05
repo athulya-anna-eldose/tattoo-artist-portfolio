@@ -32,7 +32,6 @@
 
   perspective: 1200px;
   transform-origin: center;
-  animation: introBackgroundIn 0.9s ease both;
 }
 
 /* CINEMATIC TEXTURE */
@@ -908,4 +907,48 @@
     width: min(50vh, 60vw, 300px);
     height: min(50vh, 60vw, 300px);
   }
+}
+/* ===== SHINE CLIPPED TO LOGO SHAPE (NO SQUARE) ===== */
+
+.intro-logo-frame {
+  background: transparent;
+  overflow: hidden;
+}
+
+.intro-logo-light {
+  position: absolute;
+  inset: 0;                 /* must match the logo box exactly so the mask lines up */
+  z-index: 2;
+  pointer-events: none;
+  transform: none;
+
+  background: linear-gradient(
+    110deg,
+    transparent 38%,
+    rgba(255, 222, 165, 0.25) 45%,
+    rgba(255, 244, 214, 0.95) 50%,
+    rgba(255, 222, 165, 0.25) 55%,
+    transparent 62%
+  );
+  background-size: 300% 100%;
+  background-repeat: no-repeat;
+  background-position: 100% 0;   /* band starts off the left side */
+
+  /* clip the light to the logo's own shape */
+  -webkit-mask-image: var(--logo-mask);
+  mask-image: var(--logo-mask);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+
+  opacity: 1;
+  animation: logoShine 1.4s ease-in-out 0.9s 1 both;  /* sweeps twice */
+}
+
+@keyframes logoShine {
+  from { background-position: 100% 0; }
+  to   { background-position: 0% 0; }
 }

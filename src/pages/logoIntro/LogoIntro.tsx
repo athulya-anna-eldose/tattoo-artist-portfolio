@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import "./LogoIntro.css";
 
-import logoImage from "../../assets/inker_logo_transparent.png";
+import logoImage from "../../assets/a_clean_isolated_logo_graphic_on_a_transparent_ba.png";
 
 interface LogoIntroProps {
   onComplete: () => void;
@@ -45,22 +45,21 @@ function LogoIntro({ onComplete }: LogoIntroProps) {
       <div className="intro-orb intro-orb--one" />
       <div className="intro-orb intro-orb--two" />
 
-      <div className="intro-topline">
-        <span>AKHIL DAS</span>
-      </div>
-
       <div className="intro-stage">
         <div className="intro-halo" />
 
-        <div className="intro-logo-frame">
-          <img
-            className="intro-logo"
-            src={logoImage}
-            alt="Tattoo studio emblem"
-          />
+     <div className="intro-logo-frame">
+  <img
+    className="intro-logo"
+    src={logoImage}
+    alt="Tattoo studio emblem"
+  />
 
-          <div className="intro-logo-light" />
-        </div>
+  <div
+    className="intro-logo-light"
+    style={{ ["--logo-mask" as string]: `url(${logoImage})` }}
+  />
+</div>
 
         <div className="intro-floor-light" />
       </div>

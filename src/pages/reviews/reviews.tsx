@@ -106,10 +106,10 @@ function Reviews({ onBackToHome }: ReviewsProps) {
       <BackButton onClick={onBackToHome} />
 
       <header className="reviews-header">
-        <span className="reviews-label">KIND WORDS</span>
+        <span className="reviews-label">REVIEWS</span>
 
         <h1>
-          Real Stories<span>.</span>
+         <span></span>
         </h1>
 
         

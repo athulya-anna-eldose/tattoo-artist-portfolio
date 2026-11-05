@@ -1295,24 +1295,10 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
       {view === "all" ? (
         <>
           <div className="drawings-reorder-bar">
-            <p>
-              {isReordering
-                ? "Drag images or use the arrows, then press Save."
-                : admin
-                  ? "Browse your drawings or choose Reorder to arrange them."
-                  : "Browse the drawings."}
-            </p>
+          
 
             <div className="drawings-bar-actions">
-              {admin && hidden.length > 0 && !isReordering && (
-                <button
-                  type="button"
-                  className="drawings-reset"
-                  onClick={() => void restoreDeleted()}
-                >
-                  Restore deleted
-                </button>
-              )}
+            
 
               {admin && !isReordering && (
                 <button

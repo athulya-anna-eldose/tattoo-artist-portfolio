@@ -1,4 +1,3 @@
-
 import "./home.css";
 
 import artistPhoto from "../../assets/B8732C23-1655-4905-A262-A2EFDE2212D6.png";
@@ -19,7 +18,6 @@ function Home({
   onPiercingClick,
   onDrawingsClick,
   onReviewsClick,
-  onAboutClick
 }: HomeProps) {
   const handleCategoryClick = (title: string) => {
     if (title === "Piercing") {
@@ -39,12 +37,11 @@ function Home({
       <div className="home-overlay" />
 
       <div className="hero-content">
-
         <h1>
-          Hello, <span className="gradient-text">I'm Akhil.</span>
+          Hello, I'm <span className="gradient-text"> Akhil.</span>
           <br />
           <span className="hero-role">
-            Tattoo Artist &amp; Creative Designer.
+            Tattoo Artist, Piercer  &amp; Creative Designer.
           </span>
         </h1>
 
@@ -60,7 +57,7 @@ function Home({
             </button>
           ))}
         </div>
-   
+
         <button
           type="button"
           className="reviews-link"
@@ -68,10 +65,7 @@ function Home({
         >
           Read Client Reviews <span>→</span>
         </button>
-   
       </div>
-
-     
     </section>
   );
 }

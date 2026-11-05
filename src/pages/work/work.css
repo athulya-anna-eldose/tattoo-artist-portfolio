@@ -6,7 +6,10 @@
   --wg-gold: #d7ad69;
   --wg-bright: #ffdda0;
   --wg-ivory: #f2e6d0;
-  --wg-header: 83px;
+
+  /* MUST match the navbar height in App.css:
+     desktop / tablet = 106px, mobile (<= 560px) = 92px */
+  --wg-header: 106px;
 
   position: relative;
   isolation: isolate;
@@ -22,6 +25,13 @@
   color: var(--wg-ivory);
   font-family: Arial, Helvetica, sans-serif;
   background: #080807;
+}
+
+/* Mobile navbar is shorter (92px) */
+@media (max-width: 560px) {
+  .wg-page {
+    --wg-header: 92px;
+  }
 }
 
 /* =========================================================
@@ -1146,15 +1156,10 @@
 
 /* =========================================================
    MOBILE — UP TO 480px
+   (--wg-header is set to 92px at the top of this file)
    ========================================================= */
 
 @media (max-width: 480px) {
-  .wg-page {
-    --wg-header: 74px;
-  }
-
-  /* FIX 1: back arrow sits in the top-left corner of the page.
-     .wg-page already starts below the header, so no header offset. */
   .wg-page .wg-back {
     position: absolute;
     top: 12px;
@@ -1254,8 +1259,6 @@
     height: calc(100svh - var(--wg-header));
   }
 
-  /* FIX 2: smaller centre card (~60% of screen width)
-     so neighbouring cards stay visible. */
   .wg-slide {
     width: auto;
     height: min(
@@ -1371,11 +1374,9 @@
     letter-spacing: 0.3px;
   }
 
-  /* ---------- Lightbox ---------- */
+  /* ---------- Lightbox (uses --wg-header automatically) ---------- */
 
   .wg-lightbox {
-    --lightbox-header: 74px;
-
     padding: calc(var(--lightbox-header) + 10px) 12px 20px;
   }
 
@@ -1527,7 +1528,7 @@ section.wg-page > button.wg-back:hover {
    UPLOAD + VIEW ALL BUTTONS (top-right group)
    ========================================================= */
 
-/* Holds Upload + View all side by side (same spot View all used) */
+/* Holds Upload + View all side by side */
 section.wg-page > .wg-actions {
   position: fixed;
   top: calc(var(--wg-header) + 10px);
@@ -1768,8 +1769,7 @@ section.wg-page .wg-actions button.wg-upload-btn:hover {
   background: rgba(40, 14, 12, 0.9);
 }
 
-/* The icon image inside the delete button.
-   (Overrides the general ".wg-all-item img" grid-image rule.) */
+/* The icon image inside the delete button. */
 .wg-all-item .wg-all-remove img {
   display: block;
   width: 16px;
@@ -1945,9 +1945,11 @@ section.wg-page .wg-actions button.wg-upload-btn:hover {
     font-size: 17px;
   }
 }
+
 /* =========================================================
    TABLET (561px – 1100px): make buttons bigger, stop overlap
    ========================================================= */
+
 @media (min-width: 561px) and (max-width: 1100px) {
   /* Back arrow */
   section.wg-page > button.wg-back {
@@ -1994,7 +1996,7 @@ section.wg-page .wg-actions button.wg-upload-btn:hover {
     gap: 12px !important;
   }
 
-  /* Restore deleted / Reorder (and Reset order on the other pages) */
+  /* Restore deleted / Reorder */
   section.wg-page .wg-all-reset {
     height: 44px !important;
     min-height: 44px !important;
@@ -2006,9 +2008,11 @@ section.wg-page .wg-actions button.wg-upload-btn:hover {
     white-space: nowrap !important;
   }
 }
+
 /* =========================================================
    TABLET (561px – 1100px): category screen (4 cards)
    ========================================================= */
+
 @media (min-width: 561px) and (max-width: 1100px) {
   section.wg-page .wg-category-screen {
     height: auto !important;

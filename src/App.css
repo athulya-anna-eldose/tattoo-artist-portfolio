@@ -1,4 +1,3 @@
-
 * {
   box-sizing: border-box;
 }
@@ -32,14 +31,18 @@ button {
   background: #111;
 }
 
+/* =========================
+   NAVBAR
+========================= */
+
 .navbar {
   position: relative;
   top: 0;
   left: 0;
   z-index: 10;
   width: 100%;
-  min-height: 86px;
-  padding: 20px 6%;
+  min-height: 106px;
+  padding: 8px 6%;
 
   display: flex;
   align-items: center;
@@ -47,10 +50,28 @@ button {
   gap: 24px;
 
   background: rgba(0, 0, 0, 0.22);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.18);
 }
 
+/* HOME ONLY: the navbar floats over the photo, so the photo
+   shows through as a blurred glass bar instead of a black bar. */
+.app--home .navbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  background: rgba(0, 0, 0, 0.12);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter: blur(14px) saturate(120%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
 .logo {
+  display: flex;
+  align-items: center;
   color: #fff;
   font-size: 22px;
   font-weight: 800;
@@ -59,24 +80,46 @@ button {
   white-space: nowrap;
 }
 
+.logo-img {
+  display: block;
+  height: 90px;
+  width: auto;
+  object-fit: contain;
+}
+
 .nav-links {
   display: flex;
   align-items: center;
   gap: 32px;
+
+  align-self: flex-end;   /* pin to the bottom of the navbar */
+  margin-bottom: -2px;    /* distance from the border: more negative = closer */
+  transform: none;
 }
 
+/* ALL OTHER PAGES: white links */
 .nav-links button {
   padding: 8px 0;
   border: none;
   background: transparent;
-  color: #eee;
-  font-size: 15px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 550;
   cursor: pointer;
   transition: color 0.25s ease;
 }
 
 .nav-links button:hover {
   color: #d8b478;
+}
+
+/* HOME ONLY: black links over the photo */
+.app--home .nav-links button {
+  color: #000;
+}
+
+.app--home .nav-links button:hover {
+  color: #7a5a1f;
 }
 
 main {
@@ -117,10 +160,51 @@ main {
   cursor: pointer;
 }
 
+.app:has(.logo-intro) .navbar,
+.app:has(.logo-intro) main {
+  pointer-events: none;
+}
+
+/* =========================
+   TABLET (561px - 1100px)
+========================= */
+
+@media (min-width: 561px) and (max-width: 1100px) {
+  .navbar {
+    min-height: 106px;
+    padding: 8px 5%;
+  }
+
+  .logo {
+    font-size: 28px;
+    letter-spacing: 4px;
+  }
+
+  .logo-img {
+    height: 90px;
+  }
+
+  .nav-links {
+    gap: 36px;
+    align-self: flex-end;
+    margin-bottom: -4px;
+    transform: none;
+  }
+
+  .nav-links button {
+    padding: 10px 4px;
+    font-size: 20px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
 @media (max-width: 600px) {
   .navbar {
-    min-height: 76px;
-    padding: 18px 5%;
+    min-height: 92px;
+    padding: 9px 5%;
     gap: 12px;
   }
 
@@ -129,14 +213,33 @@ main {
     letter-spacing: 1.2px;
   }
 
+  .logo-img {
+    height: 74px;     /* controls the logo size on mobile */
+  }
+
   .nav-links {
     gap: 14px;
+    align-self: flex-end;
+    margin-bottom: -2px;
+    transform: none;
   }
 
   .nav-links button {
-    font-size: 12px;
+    font-size: 15px;
+    font-weight: 300;
   }
+
+  /* Optional: uncomment if black is hard to read on the dark
+     part of the photo on phones
+  .app--home .nav-links button {
+    color: #fff;
+  }
+  */
 }
+
+/* =========================
+   VERY SMALL PHONES
+========================= */
 
 @media (max-width: 380px) {
   .navbar {
@@ -148,80 +251,16 @@ main {
     font-size: 12px;
   }
 
+  .logo-img {
+    height: 66px;     /* slightly smaller so the links are not squeezed */
+  }
+
   .nav-links {
     gap: 10px;
   }
 
   .nav-links button {
-    font-size: 11px;
-  }
-}
-
-.app:has(.logo-intro) .navbar,
-.app:has(.logo-intro) main {
-  pointer-events: none;
-}
-/* =========================================================
-   TABLET (561px – 1100px): bigger navbar
-   Height stays about the same so other pages' offsets still match
-   ========================================================= */
-@media (min-width: 561px) and (max-width: 1100px) {
-  .navbar {
-    min-height: 86px;
-    padding: 18px 5%;
-  }
-
-  .logo {
-    font-size: 28px;
-    letter-spacing: 4px;
-  }
-
-  .nav-links {
-    gap: 36px;
-  }
-
-  .nav-links button {
-    padding: 10px 4px;
-    font-size: 20px;
-  }
-}
-.logo {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.logo-img {
-  display: block;
-  height: 48px;        /* adjust to taste */
-  width: auto;         /* keeps the aspect ratio */
-  object-fit: contain;
-}
-
-@media (max-width: 600px) {
-  .logo-img {
-    height: 38px;
-  }
-}
-/* ===== BIGGER NAVBAR LOGO ===== */
-
-.navbar {
-  padding-top: 8px;      /* less padding, so the navbar height stays about 86px */
-  padding-bottom: 8px;
-}
-
-.logo-img {
-  height: 70px;          /* was 48px */
-  width: auto;
-}
-
-@media (max-width: 600px) {
-  .navbar {
-    padding-top: 9px;
-    padding-bottom: 9px;
-  }
-
-  .logo-img {
-    height: 58px;        /* was 38px */
+    font-size: 12px;
+    font-weight: 600;
   }
 }

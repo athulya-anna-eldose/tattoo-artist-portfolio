@@ -1645,24 +1645,10 @@ function Work({ onBackToHome }: WorkProps) {
       {activeCategory && showAll && (
         <div className="wg-all-view">
           <div className="wg-all-toolbar">
-            <p>
-              {isReordering
-                ? "Drag images to rearrange them, then press Save."
-                : admin
-                  ? "Click an image to open it in the gallery. Use Reorder to change the order."
-                  : "Click an image to open it in the gallery."}
-            </p>
+         
 
             <div className="wg-all-toolbar-actions">
-              {admin && hiddenIds.length > 0 && !isReordering && (
-                <button
-                  type="button"
-                  className="wg-all-reset"
-                  onClick={() => void restoreDeleted()}
-                >
-                  Restore deleted
-                </button>
-              )}
+              
 
               {admin && !isReordering && (
                 <button

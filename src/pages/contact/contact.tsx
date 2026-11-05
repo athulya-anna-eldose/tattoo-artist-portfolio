@@ -1,16 +1,17 @@
 import "./contact.css";
 
-import tattoo1 from "../../assets/1.jpg";
-import tattoo2 from "../../assets/1h.jpeg";
-import tattoo3 from "../../assets/1g.jpeg";
-import tattoo4 from "../../assets/2h.png";
-import tattoo5 from "../../assets/5g.jpg";
-import tattoo6 from "../../assets/10h.jpg";
-import tattoo7 from "../../assets/11h.jpeg";
+import tattoo1 from "../../assets/IMG_20261011_210514.jpg";
+import tattoo2 from "../../assets/IMG_20261002_194250.jpg";
+import tattoo3 from "../../assets/IMG_20260712_185429.jpg";
+import tattoo4 from "../../assets/SAVE_20250416_190924.jpg";
+import tattoo5 from "../../assets/IMG_20260521_143841.jpg";
+import tattoo6 from "../../assets/9.jpg";
+import tattoo7 from "../../assets/IMG_20260919_192344.jpg";
 
 import whatsappLogo from "../../assets/whatsapp_icon (1).svg";
 import instagramLogo from "../../assets/instagram_monochrome.png";
 import emailLogo from "../../assets/email_monochrome.png";
+
 
 /* ------------------------------------------------------------------
    Types
@@ -109,12 +110,12 @@ const Navbar = () => (
 const Hero = () => (
   <div className="cp__hero">
     <h1>
-      The Kind of Tattoo
+      The Kind of Art
       <br />
       You Won&rsquo;t Regret.
     </h1>
     <p>
-      Exclusive blackwork tattoos by appointment-only.
+      Exclusive Arts by appointment-only.
       <br />
       Where clean design meets permanent art.
     </p>

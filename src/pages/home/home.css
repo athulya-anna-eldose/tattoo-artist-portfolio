@@ -5,10 +5,14 @@
 ========================= */
 
 .home {
-  /* How far the photo is moved from left to right.
-     0% = original position, 4% = moved right (safe maximum is about 5%).
-     Increase or decrease this one value to adjust the photo. */
-  --hero-shift: 4%;
+  /* FACE POSITION CONTROLS
+     --hero-shift : negative = photo moves LEFT, positive = RIGHT
+     --hero-lift  : negative = photo moves UP
+     --hero-zoom  : must stay large enough to cover the shift
+                    (rule of thumb: zoom >= 1 + 2 x |shift|)        */
+  --hero-shift: -1%;   /* was -15% */
+  --hero-lift: 0%;
+  --hero-zoom: 1.2;    /* was 1.32 */
 
   position: relative;
   isolation: isolate;
@@ -17,9 +21,10 @@
   align-items: flex-end;
 
   width: 100%;
-  min-height: calc(100svh - 74px);
+  /* the navbar now floats over the photo, so the hero is full height */
+  min-height: 100svh;
   box-sizing: border-box;
-  padding: 70px 8%;
+  padding: 120px 8% 70px;
   overflow: hidden;
 
   background-color: #111;
@@ -31,7 +36,7 @@
   font-family: "Poppins", sans-serif;
 }
 
-/* Zoomed photo layer, moved from left to right */
+/* Photo layer: zoomed, then moved so the face sits in the centre */
 
 .home::before {
   content: "";
@@ -44,13 +49,12 @@
   background-position: center 35%;
   background-repeat: no-repeat;
 
-  /* scale() zooms in; translateX() moves the photo to the right.
-     The zoom is larger than the shift, so no empty strip shows on the left. */
-  transform: translateX(var(--hero-shift)) scale(1.12);
+  transform: translate(var(--hero-shift), var(--hero-lift))
+    scale(var(--hero-zoom));
   transform-origin: 50% 40%;
 }
 
-/* Light gradient over the image (just enough to support the text) */
+/* Gradient over the image (supports the text) */
 
 .home-overlay {
   position: absolute;
@@ -102,13 +106,7 @@
 }
 
 .gradient-text {
-  background: linear-gradient(
-    90deg,
-    #f0322c 0%,
-    #d4145a 50%,
-    #9b63dc 100%
-  );
-
+  background: linear-gradient(90deg, #f0322c 0%, #d4145a 50%, #9b63dc 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -224,10 +222,8 @@
 }
 
 /* =========================
-   BOTTOM RIGHT: SIGNATURE + "KNOW MORE ABOUT ME?"
+   SIGNATURE + ABOUT BUTTON
 ========================= */
-
-/* The signature now sits just above the button. */
 
 .hero-signature {
   position: absolute;
@@ -322,44 +318,39 @@
 }
 
 /* =========================
-   TABLET
+   TABLET (561px - 1100px)
 ========================= */
 
-@media (max-width: 860px) {
+@media (min-width: 561px) and (max-width: 1100px) {
   .home {
-    --hero-shift: 3%;
+    --hero-shift: -7%;   /* was -13% */
+    --hero-zoom: 1.18;  
 
-    min-height: calc(100svh - 65px);
-    padding: 65px 7% 80px;
+    padding: 120px 6% 140px;
   }
 
   .home::before {
-    background-position: 40% center;
-    transform-origin: 40% 40%;
-  }
-
-  .hero-buttons {
-    width: 100%;
-    justify-content: flex-start;
+    transform-origin: 50% 40%;
   }
 
   .home-overlay {
-    background:
-      linear-gradient(
-        90deg,
-        rgba(0, 0, 0, 0.6),
-        rgba(0, 0, 0, 0.4) 65%,
-        rgba(0, 0, 0, 0.15)
-      ),
-      linear-gradient(
-        0deg,
-        rgba(0, 0, 0, 0.25),
-        transparent 50%
-      );
-  }
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0.2) 35%,
+      rgba(0, 0, 0, 0) 60%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.7) 0%,
+      rgba(0, 0, 0, 0.25) 25%,
+      transparent 45%
+    );
+}
 
   .hero-content {
-    max-width: 570px;
+    max-width: 640px;
   }
 
   .hero-content h1 {
@@ -369,60 +360,124 @@
   .hero-role {
     font-size: clamp(24px, 4vw, 32px);
   }
+
+  .hero-eyebrow {
+    font-size: 14px;
+    letter-spacing: 6px;
+  }
+
+  .hero-bio {
+    max-width: 600px;
+    font-size: 18px;
+    line-height: 1.9;
+  }
+
+  .hero-buttons {
+    width: 100%;
+    gap: 16px;
+    justify-content: flex-start;
+  }
+
+  .secondary-button {
+    min-height: 60px;
+    gap: 16px;
+    padding: 0 32px;
+    border-radius: 30px;
+    font-size: 18px;
+  }
+
+  .button-arrow {
+    font-size: 22px;
+  }
+
+  .reviews-link {
+    gap: 12px;
+    margin-top: 30px;
+    padding-bottom: 8px;
+    font-size: 18px;
+  }
+
+  .reviews-link span {
+    font-size: 24px;
+  }
+
+  .hero-signature {
+    right: 6%;
+    bottom: 120px;
+  }
+
+  .hero-signature span:first-child {
+    font-size: 16px;
+    letter-spacing: 5px;
+  }
+
+  .hero-signature span:last-child {
+    font-size: 12px;
+    letter-spacing: 3px;
+  }
+
+  .about-cta {
+    right: 6%;
+    bottom: 32px;
+    min-height: 60px;
+    gap: 14px;
+    padding: 0 32px;
+    font-size: 18px;
+  }
+
+  .about-cta-arrow {
+    font-size: 22px;
+  }
 }
 
 /* =========================
-   MOBILE
+   MOBILE (up to 560px)
 ========================= */
 
-@media (max-width: 480px) {
-.home {
-    --hero-shift: 2%;
-
-    min-height: calc(100svh - 60px);
-    padding: 55px 6% 80px;   /* was: 55px 6% 150px */
+@media (max-width: 560px) {
+  .home {
+     --hero-shift: 0%;    /* no sideways push; position is set below */
+    --hero-lift: 5%;     /* was -9%, which pushed the face under the navbar */
+    --hero-zoom: 1;  
+ padding: 110px 6% 70px;
   }
 
   .home::before {
-    background-position: 45% center;
-    transform-origin: 45% 40%;
+  background-position: 52% center;  /* centers the face horizontally */
+    transform-origin: 50% 40%;
   }
 
-  .home-overlay {
-    background:
-      linear-gradient(
-        90deg,
-        rgba(0, 0, 0, 0.6),
-        rgba(0, 0, 0, 0.45)
-      ),
-      linear-gradient(
-        0deg,
-        rgba(0, 0, 0, 0.3),
-        transparent 60%
-      );
-  }
-
+  /* stronger fade at the bottom so the text stays readable */
+ .home-overlay {
+  background:
+    linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.85) 0%,
+      rgba(0, 0, 0, 0.55) 22%,
+      rgba(0, 0, 0, 0) 42%
+    );
+}
   .hero-eyebrow {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     font-size: 9px;
     letter-spacing: 3.5px;
   }
 
   .hero-content h1 {
-    margin-bottom: 22px;
-    font-size: clamp(32px, 8.5vw, 40px);
-    line-height: 1.4;
+    margin-bottom: 16px;
+    font-size: clamp(28px, 7.6vw, 36px);
+    line-height: 1.3;
     letter-spacing: -1px;
   }
 
   .hero-role {
     margin-top: 7px;
-    font-size: clamp(22px, 6vw, 28px);
+    font-size: clamp(19px, 5.4vw, 25px);
     line-height: 1.4;
   }
 
   .hero-bio {
-    margin-bottom: 25px;
+    margin-bottom: 18px;
     font-size: 12px;
     line-height: 1.85;
   }
@@ -442,7 +497,7 @@
   }
 
   .reviews-link {
-    margin-top: 22px;
+    margin-top: 16px;
     font-size: 12px;
   }
 
@@ -485,133 +540,5 @@
   .about-cta,
   .about-cta-arrow {
     transition: none;
-  }
-}
-/* =========================================================
-   TABLET (561px – 1100px): bigger buttons and text
-   ========================================================= */
-@media (min-width: 561px) and (max-width: 1100px) {
-  .home {
-    padding: 70px 6% 140px;
-  }
-
-  .hero-content {
-    max-width: 640px;
-  }
-
-  .hero-eyebrow {
-    font-size: 14px;
-    letter-spacing: 6px;
-  }
-
-  .hero-bio {
-    max-width: 600px;
-    font-size: 18px;
-    line-height: 1.9;
-  }
-
-  /* Piercing / Tattoo / Drawings */
-  .hero-buttons {
-    gap: 16px;
-  }
-
-  .secondary-button {
-    min-height: 60px;
-    gap: 16px;
-    padding: 0 32px;
-    border-radius: 30px;
-    font-size: 18px;
-  }
-
-  .button-arrow {
-    font-size: 22px;
-  }
-
-  /* Read Client Reviews */
-  .reviews-link {
-    gap: 12px;
-    margin-top: 30px;
-    padding-bottom: 8px;
-    font-size: 18px;
-  }
-
-  .reviews-link span {
-    font-size: 24px;
-  }
-
-  /* Signature + Know more about me? */
-  .hero-signature {
-    right: 6%;
-    bottom: 120px;
-  }
-
-  .hero-signature span:first-child {
-    font-size: 16px;
-    letter-spacing: 5px;
-  }
-
-  .hero-signature span:last-child {
-    font-size: 12px;
-    letter-spacing: 3px;
-  }
-
-  .about-cta {
-    right: 6%;
-    bottom: 32px;
-    min-height: 60px;
-    gap: 14px;
-    padding: 0 32px;
-    font-size: 18px;
-  }
-
-  .about-cta-arrow {
-    font-size: 22px;
-  }
-}
-/* =========================================================
-   MOBILE FIX: move the photo up, push the text down
-   ========================================================= */
-@media (max-width: 480px) {
-  .home {
-    --hero-shift: 2%;
-    --hero-lift: -9%;          /* negative = photo moves UP. try -6% to -14% */
-    padding: 55px 6% 70px;     /* less bottom padding = text sits lower */
-  }
-
-  /* bigger zoom so moving up never shows an empty strip at the bottom */
-  .home::before {
-    transform: translate(var(--hero-shift), var(--hero-lift)) scale(1.22);
-    transform-origin: 45% 40%;
-  }
-
-  /* stronger dark fade at the bottom so the text stays readable
-     even when it sits over the shirt / hand */
-  .home-overlay {
-    background:
-      linear-gradient(90deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.3)),
-      linear-gradient(0deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.5) 38%, transparent 62%);
-  }
-
-  /* slightly more compact text block, so it takes less height */
-  .hero-eyebrow {
-    margin-bottom: 12px;
-  }
-
-  .hero-content h1 {
-    margin-bottom: 16px;
-    font-size: clamp(28px, 7.6vw, 36px);
-    line-height: 1.3;
-  }
-
-  .hero-role {
-    font-size: clamp(19px, 5.4vw, 25px);
-  }
-
-  .hero-bio {
-    margin-bottom: 18px;
-  }
-
-  .reviews-link {
-    margin-top: 16px;
   }
 }
