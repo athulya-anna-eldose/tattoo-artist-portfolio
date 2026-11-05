@@ -366,3 +366,28 @@ main {
   align-self: center;
   margin-bottom: 0;
 }
+/* HOME: put the shadow behind the buttons and make them stand out */
+.app--home .navbar::after {
+  z-index: -1;            /* shadow goes behind logo and buttons */
+}
+
+.app--home .nav-links {
+  position: relative;
+  z-index: 2;             /* buttons always above the shadow */
+}
+
+.app--home .nav-links button {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1.5px solid #fff;
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.app--home .nav-links button:hover {
+  background: #fff;
+  color: #000;
+  text-shadow: none;
+}

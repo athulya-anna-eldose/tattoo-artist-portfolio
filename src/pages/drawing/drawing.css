@@ -1118,3 +1118,151 @@
   gap: 10px;
   flex-wrap: wrap;
 }
+/* ==========================================
+   Reviews-style marquee: centre card is bigger with a gold glow
+   ========================================== */
+
+/* room above and below so the glow and the bigger card are not clipped */
+.drawings-page .marquee-row {
+  height: auto;
+  padding: 56px 0;
+}
+
+.drawings-marquee {
+  justify-content: center;
+}
+
+.marquee-card {
+  border-radius: 10px;
+  transform: scale(0.86);
+  opacity: 0.55;
+  transition:
+    transform 450ms ease,
+    opacity 450ms ease,
+    border-color 450ms ease,
+    box-shadow 450ms ease;
+}
+
+.marquee-card.is-active {
+  z-index: 2;
+  transform: scale(1.08);
+  opacity: 1;
+  border-color: rgba(215, 173, 105, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(215, 173, 105, 0.5),
+    0 0 28px rgba(215, 173, 105, 0.45),
+    0 0 70px rgba(215, 173, 105, 0.2);
+}
+/* ==========================================
+   FIXES (put at the END of drawing.css)
+   1. Photo fills the whole card
+   2. Even space above and below the animation
+   Applies to desktop, tablet and mobile
+   ========================================== */
+
+/* 1. PHOTO FITS THE CARD (no black bars, no inner padding) */
+.marquee-card img,
+.drawing-card img {
+  object-fit: cover;
+  padding: 0;
+}
+
+/* 2. EQUAL SPACE ABOVE AND BELOW THE ANIMATION */
+.drawings-page {
+  display: flex;
+  flex-direction: column;
+
+  /* page = screen height minus the site header, so nothing
+     is pushed below the fold and no empty strip is left at the bottom */
+  min-height: calc(100vh - var(--draw-header));
+  min-height: calc(100dvh - var(--draw-header));
+}
+
+.drawings-header {
+  flex: 0 0 auto;
+}
+
+/* the marquee takes all the remaining height and centres the rows in it,
+   so the gap under the title equals the gap under the cards */
+.drawings-marquee {
+  flex: 1 1 auto;
+  min-height: 0;
+  justify-content: center;
+}
+
+/* room for the bigger centre card and its glow, same top and bottom */
+.drawings-page .marquee-row {
+  padding: 48px 0;
+}
+
+@media (max-width: 560px) {
+  .drawings-page .marquee-row {
+    padding: 40px 0;
+  }
+}
+/* ==========================================
+   BIGGER CARDS (put at the END of drawing.css)
+   Desktop, tablet and mobile
+   ========================================== */
+
+/* Desktop: wider cards (was clamp(150px, 19vw, 280px)).
+   min(..., 38vh) stops the cards getting taller than the screen
+   on short laptop displays. */
+.drawings-page {
+  --card-w: clamp(170px, min(23vw, 38vh), 360px);
+}
+
+/* Tablet (was 30vh) */
+@media (min-width: 561px) and (max-width: 1100px) {
+  .drawings-page {
+    --row-h: clamp(240px, 36vh, 500px);
+  }
+}
+
+/* Phone (was 34vh) */
+@media (max-width: 560px) {
+  .drawings-page {
+    --row-h: clamp(230px, 40vh, 400px);
+  }
+}
+/* ==========================================
+   EQUAL TOP / BOTTOM SPACE ON TABLET + MOBILE
+   (put at the END of drawing.css)
+   ========================================== */
+
+/* Tablet */
+@media (min-width: 561px) and (max-width: 1100px) {
+  .drawings-page {
+    padding-bottom: 0;           /* was 28px */
+  }
+
+  .drawings-page .drawings-header {
+    margin-bottom: 0;            /* was 40px */
+  }
+
+  .drawings-page .marquee-row {
+    padding: 44px 0;             /* same above and below */
+  }
+}
+
+/* Phone and small tablet: use the real height of the site header */
+@media (max-width: 768px) {
+  .drawings-page {
+    --draw-header: 99px;         /* was 74px - check below */
+  }
+}
+
+/* Phone */
+@media (max-width: 560px) {
+  .drawings-page {
+    padding-bottom: 0;           /* was 16px */
+  }
+
+  .drawings-page .drawings-header {
+    margin-bottom: 0;            /* was 24px */
+  }
+
+  .drawings-page .marquee-row {
+    padding: 36px 0;             /* same above and below */
+  }
+}

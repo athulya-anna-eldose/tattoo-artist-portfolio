@@ -557,6 +557,6 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.20);   /* 0.10 = 10% darker */
+  background: rgba(0, 0, 0, 0.30);   /* 0.10 = 10% darker */
   pointer-events: none;
 }

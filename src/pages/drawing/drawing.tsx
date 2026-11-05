@@ -368,6 +368,8 @@ const MarqueeRow = memo(function MarqueeRow({
   label,
   onOpen,
 }: MarqueeRowProps) {
+  const rowRef = useRef<HTMLDivElement>(null);
+
   const half = useMemo(() => {
     if (items.length === 0) return [];
 
@@ -379,12 +381,52 @@ const MarqueeRow = memo(function MarqueeRow({
     return Array.from({ length: repetitions }, () => items).flat();
   }, [items]);
 
+  // Same idea as the Reviews page: the card closest to the centre of the
+  // screen gets the "is-active" class (bigger + gold glow).
+  useEffect(() => {
+    const row = rowRef.current;
+
+    if (!row) return;
+
+    let frame = 0;
+
+    const update = () => {
+      const cards = Array.from(
+        row.querySelectorAll<HTMLElement>(".marquee-card")
+      );
+      const center = window.innerWidth / 2;
+
+      let closest: HTMLElement | null = null;
+      let best = Infinity;
+
+      for (const card of cards) {
+        const rect = card.getBoundingClientRect();
+        const distance = Math.abs(center - (rect.left + rect.width / 2));
+
+        if (distance < best) {
+          best = distance;
+          closest = card;
+        }
+      }
+
+      for (const card of cards) {
+        card.classList.toggle("is-active", card === closest);
+      }
+
+      frame = requestAnimationFrame(update);
+    };
+
+    frame = requestAnimationFrame(update);
+
+    return () => cancelAnimationFrame(frame);
+  }, [half]);
+
   const duration = half.length * SECONDS_PER_CARD;
 
   if (half.length === 0) return null;
 
   return (
-    <div className="marquee-row" role="list" aria-label={label}>
+    <div className="marquee-row" role="list" aria-label={label} ref={rowRef}>
       <div
         className={`marquee-track ${reverse ? "is-reverse" : ""}`}
         style={{ "--duration": `${duration}s` } as CSSProperties}
@@ -404,8 +446,6 @@ const MarqueeRow = memo(function MarqueeRow({
                 aria-label="View drawing"
                 tabIndex={copy === 1 ? -1 : 0}
               >
-                {/* eager: iPhone Safari does not reliably lazy-load images
-                    that sit off-screen inside an animated track */}
                 <img
                   src={item.src}
                   alt="Tattoo drawing"
@@ -1272,7 +1312,7 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
 
       <header className="drawings-header">
         <h1>
-          DRAW<span>INGS</span>
+          DRAWINGS
         </h1>
       </header>
 
@@ -1426,19 +1466,12 @@ export default function Drawings({ onBackToHome }: DrawingsProps) {
         </>
       ) : (
         <section className="drawings-marquee" aria-label="Drawing portfolio">
-          <MarqueeRow
-            items={rowTop}
-            label="Drawings row 1"
-            onOpen={openImage}
-          />
-
-          <MarqueeRow
-            items={rowBottom}
-            reverse
-            label="Drawings row 2"
-            onOpen={openImage}
-          />
-        </section>
+  <MarqueeRow
+    items={orderedDrawings}
+    label="Drawings"
+    onOpen={openImage}
+  />
+</section>
       )}
 
       {selectedImage && (
