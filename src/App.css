@@ -391,3 +391,28 @@ main {
   color: #000;
   text-shadow: none;
 }
+/* HOME: shadow behind the buttons */
+.app--home .navbar::after {
+  z-index: -1;
+}
+
+.app--home .nav-links {
+  position: relative;
+  z-index: 2;
+}
+
+/* HOME: nav buttons styled like Tattoo / Piercing / Drawings */
+.app--home .nav-links button {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.9);   /* thinner border */
+  color: #fff;
+  font-weight: 500;                             /* lighter text */
+  text-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.app--home .nav-links button:hover {
+  background: #fff;
+  color: #000;
+}
