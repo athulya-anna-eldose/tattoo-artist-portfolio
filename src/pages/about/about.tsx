@@ -17,7 +17,7 @@ interface AboutProps {
 /* Edit this text to tell your own story. */
 /* Edit this text to tell your own story. Text between *stars* becomes bold. */
 const ABOUT_PARAGRAPHS: string[] = [
-  "I'm a *Professional Tattoo artist, Piercer & Creative Designer* with over 5 years of experience, transforming personal stories, ideas and inspirations into meaningful works of art.",
+  "I'm a *Professional Tattoo artist , Piercer & Creative Designer* with over 5 years of experience, transforming personal stories, ideas and inspirations into meaningful works of art.",
   "Specialising in *Black & Grey Realism, Fine Line, Dotworks etc*, my approach combines artistic precision, attention to detail and individuality to create thoughtfully crafted tattoos.",
   "I believe *every great tattoo experience begins with trust*. From consultation to completion, I prioritise *client comfort, clear communication, strict hygiene standards and professional care*, ensuring every client feels *respected, confident and comfortable*.",
   "My philosophy is simple: *Never compromise on Art, Quality or Trust*.",
@@ -70,8 +70,6 @@ function About({ onBackToHome, onReviewsClick, onContactClick }: AboutProps) {
        <h1>
   Hi, I&apos;m <span className="about-gradient">Akhil Das.</span>
 </h1>
-
-        <p className="about-role">Tattoo Artist, Piercer  &amp; Creative Designer.</p>
 
         {ABOUT_PARAGRAPHS.map((paragraph) => (
   <p className="about-text" key={paragraph}>

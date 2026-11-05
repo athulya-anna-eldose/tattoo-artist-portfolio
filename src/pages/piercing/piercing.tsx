@@ -424,26 +424,28 @@ const cardNameStyle = (edge: "top" | "bottom"): CSSProperties => ({
   zIndex: 4,
   boxSizing: "border-box",
   display: "block",
-  // Soft fade instead of a box: no border, no visible edge
-  padding: edge === "bottom" ? "56px 16px 18px" : "18px 16px 56px",
+  // small bottom padding = text sits right at the bottom edge
+  padding: edge === "bottom" ? "56px 20px 18px" : "18px 20px 56px",
   background:
     edge === "bottom"
       ? "linear-gradient(to top, rgba(8, 7, 5, 0.88) 0%, rgba(8, 7, 5, 0.55) 45%, rgba(8, 7, 5, 0) 100%)"
       : "linear-gradient(to bottom, rgba(8, 7, 5, 0.88) 0%, rgba(8, 7, 5, 0.55) 45%, rgba(8, 7, 5, 0) 100%)",
   border: "none",
   borderRadius: 0,
-  color: "#f0d9a8", // soft gold-ivory to match your theme
-  fontFamily: '"Cormorant Garamond", "Playfair Display", Georgia, serif',
-  fontSize: "clamp(15px, 1.4vw + 9px, 22px)",
-  fontWeight: 700,
-  letterSpacing: "4px",
-  textAlign: "center",
-  textTransform: "uppercase",
+
+  color: "#fff",
+  fontFamily: "Arial, Helvetica, sans-serif",
+  fontSize: "clamp(15px, 1.1vw + 8px, 20px)", // slightly larger
+  fontWeight: 400,
+  letterSpacing: "0.3px",
+  textTransform: "none",
+
+  textAlign: "left",
   whiteSpace: "nowrap",
   overflow: "hidden",
   textOverflow: "ellipsis",
   pointerEvents: "none",
-  textShadow: "0 2px 6px rgba(0, 0, 0, 0.9)",
+  textShadow: "0 1px 4px rgba(0, 0, 0, 0.8)",
 });
 
 /* Name box under the full-screen image. */
@@ -1786,13 +1788,6 @@ function Piercing({ onBackToHome }: PiercingProps) {
   <span style={cardNameStyle("bottom")}>{tattoo.name}</span>
 )}
 
-                      <span className="wg-artwork-info">
-                        <small>
-                          {String(index + 1).padStart(2, "0")}
-                          {" / "}
-                          {String(filteredTattoos.length).padStart(2, "0")}
-                        </small>
-                      </span>
                     </button>
                   </article>
                 );

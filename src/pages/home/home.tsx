@@ -40,9 +40,11 @@ function Home({
         <h1>
           Hello, I'm <span className="gradient-text"> Akhil.</span>
           <br />
-          <span className="hero-role">
-            Tattoo Artist, Piercer  &amp; Creative Designer.
-          </span>
+         <span className="hero-role">
+  Tattoo Artist , Piercer &amp;
+  <br />
+  Creative Designer.
+</span>
         </h1>
 
         <div className="hero-buttons">

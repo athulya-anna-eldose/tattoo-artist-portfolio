@@ -264,3 +264,105 @@ main {
     font-weight: 600;
   }
 }
+/* ==========================================================================
+   HOME navbar: pill buttons + shadow
+   ========================================================================== */
+.app--home .nav-links {
+  align-self: flex-end;
+  margin-bottom: -4px;  /* was 8px. Lower = closer to the border */
+  gap: 12px;
+}
+
+.app--home .nav-links button {
+  padding: 10px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+.app--home .nav-links button:hover {
+  background: #fff;
+  color: #000;
+}
+
+/* Strong black shadow that starts exactly at the header's bottom border */
+.app--home .navbar::after {
+  content: "";
+  position: absolute;
+  top: 100%;            /* locked to the header's bottom border */
+  left: 0;
+  right: 0;
+  height: 260px;        /* longer = shadow reaches further down */
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.55) 30%,
+    rgba(0, 0, 0, 0.2) 65%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+@media (max-width: 600px) {
+  .app--home .nav-links {
+    gap: 8px;           /* no margin-bottom here, so the lift above applies to phones too */
+  }
+  .app--home .nav-links button {
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+  .app--home .navbar::after {
+    height: 200px;
+  }
+}
+
+@media (max-width: 380px) {
+  .app--home .nav-links { gap: 6px; }
+  .app--home .nav-links button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+/* ==========================================================================
+   HOME: no blur at the top, just the photo with a soft dark shadow
+   ========================================================================== */
+.app--home .navbar {
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-bottom: none;
+}
+
+.app--home .navbar::before {
+  content: none;
+}
+
+/* Shadow now starts at the very top of the header */
+.app--home .navbar::after {
+  top: 0;
+  height: 260px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 0, 0, 0.45) 35%,
+    rgba(0, 0, 0, 0.15) 70%,
+    transparent 100%
+  );
+}
+
+@media (max-width: 600px) {
+  .app--home .navbar::after {
+    height: 200px;
+  }
+}
+/* ==========================================================================
+   HOME: logo and buttons on the same line (vertically centred)
+   ========================================================================== */
+.app--home .nav-links {
+  align-self: center;
+  margin-bottom: 0;
+}

@@ -10,9 +10,9 @@
      --hero-lift  : negative = photo moves UP
      --hero-zoom  : must stay large enough to cover the shift
                     (rule of thumb: zoom >= 1 + 2 x |shift|)        */
-  --hero-shift: -1%;   /* was -15% */
-  --hero-lift: 0%;
-  --hero-zoom: 1.2;    /* was 1.32 */
+  --hero-shift: -1%;
+  --hero-lift: 5%;     /* was 0%. Bigger = face lower */
+  --hero-zoom: 1.2;  
 
   position: relative;
   isolation: isolate;
@@ -322,9 +322,10 @@
 ========================= */
 
 @media (min-width: 561px) and (max-width: 1100px) {
-  .home {
-    --hero-shift: -7%;   /* was -13% */
-    --hero-zoom: 1.18;  
+ .home {
+    --hero-shift: -7%;
+    --hero-lift: 4%;     /* add this line, the tablet block didn't have one */
+    --hero-zoom: 1.18;   /* unchanged, it covers up to about 7% lift */
 
     padding: 120px 6% 140px;
   }
@@ -435,13 +436,13 @@
 ========================= */
 
 @media (max-width: 560px) {
-  .home {
-     --hero-shift: 0%;    /* no sideways push; position is set below */
-    --hero-lift: 5%;     /* was -9%, which pushed the face under the navbar */
-    --hero-zoom: 1;  
- padding: 110px 6% 70px;
-  }
 
+   .home {
+    --hero-shift: 0%;
+    --hero-lift: 5%;
+    --hero-zoom: 1.15;
+    padding: 110px 6% 70px;
+  }
   .home::before {
   background-position: 52% center;  /* centers the face horizontally */
     transform-origin: 50% 40%;
@@ -541,4 +542,21 @@
   .about-cta-arrow {
     transition: none;
   }
+}
+/* ==========================================================================
+   Hero text: bottom-left corner on every screen size
+   ========================================================================== */
+.home {
+  padding-left: clamp(20px, 3.5vw, 48px);   /* distance from the left edge */
+  padding-bottom: clamp(24px, 4vw, 44px);   /* distance from the bottom edge */
+}
+/* ==========================================================================
+   Darken the whole photo by about 10%
+   ========================================================================== */
+.home-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.20);   /* 0.10 = 10% darker */
+  pointer-events: none;
 }

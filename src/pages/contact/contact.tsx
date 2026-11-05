@@ -3,7 +3,7 @@ import "./contact.css";
 import tattoo1 from "../../assets/IMG_20261011_210514.jpg";
 import tattoo2 from "../../assets/IMG_20261002_194250.jpg";
 import tattoo3 from "../../assets/IMG_20260712_185429.jpg";
-import tattoo4 from "../../assets/SAVE_20250416_190924.jpg";
+import tattoo4 from "../../assets/8g.jpg";
 import tattoo5 from "../../assets/IMG_20260521_143841.jpg";
 import tattoo6 from "../../assets/9.jpg";
 import tattoo7 from "../../assets/IMG_20260919_192344.jpg";
