@@ -1,11 +1,7 @@
 import { memo } from "react";
 import "./about.css";
 
-/* ---------------------------------------------------------
-   IMPORTANT: point this to the photo you want on top of the
-   About page (for example the same photo used on the Home page).
-   Change the file name to match a file in your assets folder.
-   --------------------------------------------------------- */
+
 import artistPhoto from "../../assets/B8732C23-1655-4905-A262-A2EFDE2212D6.png";
 
 interface AboutProps {
@@ -14,8 +10,7 @@ interface AboutProps {
   onContactClick: () => void;
 }
 
-/* Edit this text to tell your own story. */
-/* Edit this text to tell your own story. Text between *stars* becomes bold. */
+
 const ABOUT_PARAGRAPHS: string[] = [
   "I'm a *Professional Tattoo artist , Piercer & Creative Designer* with over 5 years of experience, transforming personal stories, ideas and inspirations into meaningful works of art.",
   "Specialising in *Black & Grey Realism, Fine Line, Dotworks etc*, my approach combines artistic precision, attention to detail and individuality to create thoughtfully crafted tattoos.",
@@ -23,7 +18,6 @@ const ABOUT_PARAGRAPHS: string[] = [
   "My philosophy is simple: *Never compromise on Art, Quality or Trust*.",
 ];
 
-/* Turns *text* into bold text. */
 const renderBold = (text: string) =>
   text
     .split(/\*(.+?)\*/g)
